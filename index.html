@@ -1,0 +1,287 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10101d">
+  <title>RUS RNG</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    :root {
+      --bg: #10101d;
+      --panel: #1b1930;
+      --purple: #8b5cf6;
+      --text: #fff;
+      --muted: #aaa7c8;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px 16px;
+      font-family: Arial, sans-serif;
+      color: var(--text);
+      background: radial-gradient(ellipse at top, #302052, var(--bg) 70%);
+    }
+
+    .app { max-width: 430px; margin: auto; text-align: center; }
+
+    h1 { font-size: 34px; letter-spacing: 4px; margin-bottom: 5px; }
+    .muted { color: var(--muted); font-size: 13px; }
+
+    .panel {
+      padding: 22px 14px;
+      margin-top: 24px;
+      border: 1px solid #393253;
+      border-radius: 22px;
+      background: var(--panel);
+    }
+
+    .label { color: var(--muted); font-size: 12px; letter-spacing: 2px; }
+
+    .result {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin: 24px 0;
+    }
+
+    .symbol {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 58px;
+      border: 1px solid #50447d;
+      border-radius: 11px;
+      background: #282344;
+      color: #d4c4ff;
+      font-size: 25px;
+      font-weight: bold;
+    }
+
+    .rolling { animation: roll .1s infinite alternate; }
+
+    @keyframes roll {
+      from { transform: translateY(-3px); }
+      to { transform: translateY(3px); }
+    }
+
+    button { cursor: pointer; font-family: inherit; }
+
+    .generate {
+      width: 100%;
+      padding: 17px;
+      border: 0;
+      border-radius: 14px;
+      color: white;
+      background: linear-gradient(100deg, #7957ff, #a04dff);
+      font-size: 17px;
+      font-weight: bold;
+    }
+
+    .generate:disabled { opacity: .6; cursor: wait; }
+
+    .rarity { margin: 18px 0 4px; font-size: 21px; font-weight: bold; }
+
+    .section { margin: 25px 0 12px; text-align: left; font-size: 18px; }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 13px;
+      background: var(--panel);
+      border-radius: 12px;
+    }
+
+    .history-code { font-weight: bold; letter-spacing: 2px; }
+    .history-rarity { color: var(--muted); font-size: 12px; }
+
+    .secondary {
+      padding: 10px 14px;
+      border: 1px solid #514574;
+      border-radius: 10px;
+      background: transparent;
+      color: white;
+    }
+
+    .bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 360px) {
+      .symbol { width: 42px; height: 53px; font-size: 22px; }
+      .result { gap: 4px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>RUS RNG</h1>
+    <div class="muted">Русский генератор случайных комбинаций</div>
+
+    <section class="panel">
+      <div class="label">ТВОЯ КОМБИНАЦИЯ</div>
+
+      <div class="result" id="result">
+        <div class="symbol">?</div><div class="symbol">?</div>
+        <div class="symbol">?</div><div class="symbol">?</div>
+        <div class="symbol">?</div><div class="symbol">?</div>
+      </div>
+
+      <button class="generate" id="generate">🎲 Сгенерировать</button>
+
+      <div class="rarity" id="rarity">Готов к генерации</div>
+      <div class="muted" id="description">Нажми кнопку и испытай удачу!</div>
+    </section>
+
+    <h2 class="section">📜 История выпадений</h2>
+    <div id="history"><div class="muted">Пока результатов нет</div></div>
+
+    <div class="bottom">
+      <span class="muted" id="counter">Генераций: 0</span>
+      <button class="secondary" id="clear">Очистить</button>
+    </div>
+  </main>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    tg?.ready();
+    tg?.expand();
+
+    // 10 цифр и 33 русские буквы, включая Ё
+    const alphabet = "0123456789АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+
+    const resultEl = document.getElementById("result");
+    const generateBtn = document.getElementById("generate");
+    const rarityEl = document.getElementById("rarity");
+    const descriptionEl = document.getElementById("description");
+    const historyEl = document.getElementById("history");
+
+    let history = [];
+    let count = 0;
+    let busy = false;
+
+    // Равномерный выбор символа без смещения по модулю
+    function randomSymbol() {
+      const values = new Uint32Array(1);
+      const range = 4294967296;
+      const limit = Math.floor(range / alphabet.length) * alphabet.length;
+
+      do {
+        crypto.getRandomValues(values);
+      } while (values[0] >= limit);
+
+      return alphabet[values[0] % alphabet.length];
+    }
+
+    function generateCode() {
+      return Array.from({ length: 6 }, randomSymbol).join("");
+    }
+
+    function getRarity(code) {
+      const unique = new Set(code).size;
+
+      if (unique === 1) return ["🌌 ЛЕГЕНДАРНАЯ", "Все символы одинаковые"];
+      if (unique === 2) return ["💎 ЭПИЧЕСКАЯ", "Два разных символа"];
+      if (unique === 3) return ["🟣 РЕДКАЯ", "Три разных символа"];
+      if (unique === 6) return ["✨ НЕОБЫЧНАЯ", "Все символы разные"];
+
+      return ["⚪ ОБЫЧНАЯ", "Стандартное выпадение"];
+    }
+
+    function renderHistory() {
+      historyEl.replaceChildren();
+
+      if (!history.length) {
+        const empty = document.createElement("div");
+        empty.className = "muted";
+        empty.textContent = "Пока результатов нет";
+        historyEl.appendChild(empty);
+      }
+
+      history.forEach(item => {
+        const row = document.createElement("div");
+        row.className = "history-item";
+
+        const code = document.createElement("span");
+        code.className = "history-code";
+        code.textContent = item.code;
+
+        const rarity = document.createElement("span");
+        rarity.className = "history-rarity";
+        rarity.textContent = item.rarity;
+
+        row.append(code, rarity);
+        historyEl.appendChild(row);
+      });
+
+      document.getElementById("counter").textContent = "Генераций: " + count;
+    }
+
+    function animateGeneration(code) {
+      busy = true;
+      generateBtn.disabled = true;
+      generateBtn.textContent = "✨ Генерация...";
+      rarityEl.textContent = "🎲 Крутим...";
+      descriptionEl.textContent = "Выбираем случайные символы";
+
+      const cells = [...resultEl.children];
+      cells.forEach(cell => cell.classList.add("rolling"));
+
+      let ticks = 0;
+
+      const animation = setInterval(() => {
+        cells.forEach(cell => cell.textContent = randomSymbol());
+        ticks++;
+
+        if (ticks >= 12) {
+          clearInterval(animation);
+
+          cells.forEach((cell, i) => {
+            cell.textContent = code[i];
+            cell.classList.remove("rolling");
+          });
+
+          const [name, description] = getRarity(code);
+          rarityEl.textContent = name;
+          descriptionEl.textContent = description;
+
+          history.unshift({ code, rarity: name });
+          history = history.slice(0, 10);
+          count++;
+
+          renderHistory();
+          tg?.HapticFeedback?.impactOccurred("light");
+
+          generateBtn.disabled = false;
+          generateBtn.textContent = "🎲 Сгенерировать ещё";
+          busy = false;
+        }
+      }, 80);
+    }
+
+    generateBtn.addEventListener("click", () => {
+      if (!busy) animateGeneration(generateCode());
+    });
+
+    document.getElementById("clear").addEventListener("click", () => {
+      if (busy) return;
+      history = [];
+      count = 0;
+      renderHistory();
+    });
+
+    renderHistory();
+  </script>
+</body>
+</html>
