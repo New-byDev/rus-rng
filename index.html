@@ -6,9 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10101d">
   <title>RUS RNG</title>
+
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     :root {
       --bg: #10101d;
@@ -16,6 +20,7 @@
       --purple: #8b5cf6;
       --text: #fff;
       --muted: #aaa7c8;
+      --border: #393253;
     }
 
     body {
@@ -24,23 +29,47 @@
       padding: 24px 16px;
       font-family: Arial, sans-serif;
       color: var(--text);
-      background: radial-gradient(ellipse at top, #302052, var(--bg) 70%);
+      background: radial-gradient(
+        ellipse at top,
+        #302052,
+        var(--bg) 70%
+      );
     }
 
-    .app { max-width: 430px; margin: auto; text-align: center; }
+    .app {
+      max-width: 430px;
+      margin: auto;
+      text-align: center;
+    }
 
-    h1 { font-size: 34px; letter-spacing: 4px; margin-bottom: 5px; }
-    .muted { color: var(--muted); font-size: 13px; }
+    h1 {
+      font-size: 34px;
+      letter-spacing: 4px;
+      margin-bottom: 5px;
+    }
+
+    h2 {
+      font-size: 20px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
 
     .panel {
       padding: 22px 14px;
       margin-top: 24px;
-      border: 1px solid #393253;
+      border: 1px solid var(--border);
       border-radius: 22px;
       background: var(--panel);
     }
 
-    .label { color: var(--muted); font-size: 12px; letter-spacing: 2px; }
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 2px;
+    }
 
     .result {
       display: flex;
@@ -62,14 +91,24 @@
       font-weight: bold;
     }
 
-    .rolling { animation: roll .1s infinite alternate; }
+    .rolling {
+      animation: roll .1s infinite alternate;
+    }
 
     @keyframes roll {
       from { transform: translateY(-3px); }
       to { transform: translateY(3px); }
     }
 
-    button { cursor: pointer; font-family: inherit; }
+    button {
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
 
     .generate {
       width: 100%;
@@ -82,11 +121,17 @@
       font-weight: bold;
     }
 
-    .generate:disabled { opacity: .6; cursor: wait; }
+    .rarity {
+      margin: 18px 0 4px;
+      font-size: 21px;
+      font-weight: bold;
+    }
 
-    .rarity { margin: 18px 0 4px; font-size: 21px; font-weight: bold; }
-
-    .section { margin: 25px 0 12px; text-align: left; font-size: 18px; }
+    .section {
+      margin: 25px 0 12px;
+      text-align: left;
+      font-size: 18px;
+    }
 
     .history-item {
       display: flex;
@@ -99,8 +144,15 @@
       border-radius: 12px;
     }
 
-    .history-code { font-weight: bold; letter-spacing: 2px; }
-    .history-rarity { color: var(--muted); font-size: 12px; }
+    .history-code {
+      font-weight: bold;
+      letter-spacing: 2px;
+    }
+
+    .history-rarity {
+      color: var(--muted);
+      font-size: 12px;
+    }
 
     .secondary {
       padding: 10px 14px;
@@ -118,81 +170,167 @@
       margin-top: 16px;
     }
 
+    #adminPanel {
+      text-align: left;
+    }
+
+    #adminPanel h2,
+    #adminPanel > p {
+      text-align: center;
+    }
+
+    #adminLogin {
+      width: 100%;
+      margin-top: 12px;
+    }
+
+    #adminEditor {
+      margin-top: 20px;
+    }
+
+    #adminEditor label {
+      display: block;
+      margin: 16px 0 7px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    #adminEditor input {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #514574;
+      border-radius: 10px;
+      background: #282344;
+      color: white;
+      font-size: 15px;
+      outline: none;
+    }
+
+    #adminEditor input:focus {
+      border-color: var(--purple);
+    }
+
+    #applySettings {
+      margin-top: 18px;
+    }
+
+    #adminStatus {
+      margin-top: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
     @media (max-width: 360px) {
-      .symbol { width: 42px; height: 53px; font-size: 22px; }
-      .result { gap: 4px; }
+      .symbol {
+        width: 42px;
+        height: 53px;
+        font-size: 22px;
+      }
+
+      .result {
+        gap: 4px;
+      }
     }
   </style>
 </head>
+
 <body>
   <main class="app">
-    <h1>RUS RNG</h1>
-    <div class="muted">Русский генератор случайных комбинаций</div>
+    <h1 id="gameTitleDisplay">RUS RNG</h1>
+
+    <div class="muted" id="gameSubtitleDisplay">
+      Русский генератор случайных комбинаций
+    </div>
 
     <section class="panel">
       <div class="label">ТВОЯ КОМБИНАЦИЯ</div>
 
       <div class="result" id="result">
-        <div class="symbol">?</div><div class="symbol">?</div>
-        <div class="symbol">?</div><div class="symbol">?</div>
-        <div class="symbol">?</div><div class="symbol">?</div>
+        <div class="symbol">?</div>
+        <div class="symbol">?</div>
+        <div class="symbol">?</div>
+        <div class="symbol">?</div>
+        <div class="symbol">?</div>
+        <div class="symbol">?</div>
       </div>
 
-      <button class="generate" id="generate">🎲 Сгенерировать</button>
+      <button class="generate" id="generate">
+        🎲 Сгенерировать
+      </button>
 
-      <div class="rarity" id="rarity">Готов к генерации</div>
-      <div class="muted" id="description">Нажми кнопку и испытай удачу!</div>
+      <div class="rarity" id="rarity">
+        Готов к генерации
+      </div>
+
+      <div class="muted" id="description">
+        Нажми кнопку и испытай удачу!
+      </div>
     </section>
 
     <h2 class="section">📜 История выпадений</h2>
-    <div id="history"><div class="muted">Пока результатов нет</div></div>
+
+    <div id="history">
+      <div class="muted">Пока результатов нет</div>
+    </div>
 
     <div class="bottom">
       <span class="muted" id="counter">Генераций: 0</span>
       <button class="secondary" id="clear">Очистить</button>
     </div>
+
+    <section class="panel" id="adminPanel">
+      <h2>⚙️ Админ-панель</h2>
+
+      <p class="muted">
+        Управление настройками RUS RNG
+      </p>
+
+      <button class="secondary" id="adminLogin">
+        🔐 Войти как администратор
+      </button>
+
+      <div id="adminEditor" hidden>
+        <label for="gameTitle">Название игры</label>
+        <input
+          id="gameTitle"
+          type="text"
+          value="RUS RNG"
+          maxlength="40"
+        >
+
+        <label for="gameSubtitle">Описание игры</label>
+        <input
+          id="gameSubtitle"
+          type="text"
+          value="Русский генератор случайных комбинаций"
+          maxlength="120"
+        >
+
+        <button class="generate" id="applySettings">
+          Применить настройки
+        </button>
+
+        <p class="muted" id="adminStatus" role="status"></p>
+      </div>
+    </section>
   </main>
 
   <script>
     const tg = window.Telegram?.WebApp;
+
     tg?.ready();
     tg?.expand();
-    
-const API_URL = "https://rus-rng-api.mirikpirik2009.workers.dev";
 
-async function checkAdminAccess() {
-  if (!tg?.initData) {
-    alert("Открой игру через Telegram.");
-    return false;
-  }
+    // Адрес Cloudflare Worker
+    const API_URL =
+      "https://rus-rng-api.mirikpirik2009.workers.dev";
 
-  try {
-    const response = await fetch(`${API_URL}/admin/check`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Telegram-Init-Data": tg.initData
-      },
-      body: JSON.stringify({})
-    });
-
-    const data = await response.json();
-
-    if (!response.ok || !data.admin) {
-      alert("Доступ администратора запрещён.");
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    alert("Не удалось связаться с сервером.");
-    return false;
-  }
-}
-
-
-    // 10 цифр и 33 русские буквы, включая Ё
-    const alphabet = "0123456789АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+    // Цифры и русские буквы, включая Ё
+    const alphabet =
+      "0123456789АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
 
     const resultEl = document.getElementById("result");
     const generateBtn = document.getElementById("generate");
@@ -203,12 +341,14 @@ async function checkAdminAccess() {
     let history = [];
     let count = 0;
     let busy = false;
+    let isAdmin = false;
 
-    // Равномерный выбор символа без смещения по модулю
+    // Криптографически стойкий выбор символа
     function randomSymbol() {
       const values = new Uint32Array(1);
       const range = 4294967296;
-      const limit = Math.floor(range / alphabet.length) * alphabet.length;
+      const limit =
+        Math.floor(range / alphabet.length) * alphabet.length;
 
       do {
         crypto.getRandomValues(values);
@@ -218,24 +358,53 @@ async function checkAdminAccess() {
     }
 
     function generateCode() {
-      return Array.from({ length: 6 }, randomSymbol).join("");
+      return Array.from(
+        { length: 6 },
+        () => randomSymbol()
+      ).join("");
     }
 
     function getRarity(code) {
       const unique = new Set(code).size;
 
-      if (unique === 1) return ["🌌 ЛЕГЕНДАРНАЯ", "Все символы одинаковые"];
-      if (unique === 2) return ["💎 ЭПИЧЕСКАЯ", "Два разных символа"];
-      if (unique === 3) return ["🟣 РЕДКАЯ", "Три разных символа"];
-      if (unique === 6) return ["✨ НЕОБЫЧНАЯ", "Все символы разные"];
+      if (unique === 1) {
+        return [
+          "🌌 ЛЕГЕНДАРНАЯ",
+          "Все символы одинаковые"
+        ];
+      }
 
-      return ["⚪ ОБЫЧНАЯ", "Стандартное выпадение"];
+      if (unique === 2) {
+        return [
+          "💎 ЭПИЧЕСКАЯ",
+          "В комбинации два разных символа"
+        ];
+      }
+
+      if (unique === 3) {
+        return [
+          "🟣 РЕДКАЯ",
+          "В комбинации три разных символа"
+        ];
+      }
+
+      if (unique === 6) {
+        return [
+          "✨ НЕОБЫЧНАЯ",
+          "Все символы разные"
+        ];
+      }
+
+      return [
+        "⚪ ОБЫЧНАЯ",
+        "Стандартное выпадение"
+      ];
     }
 
     function renderHistory() {
       historyEl.replaceChildren();
 
-      if (!history.length) {
+      if (history.length === 0) {
         const empty = document.createElement("div");
         empty.className = "muted";
         empty.textContent = "Пока результатов нет";
@@ -258,23 +427,33 @@ async function checkAdminAccess() {
         historyEl.appendChild(row);
       });
 
-      document.getElementById("counter").textContent = "Генераций: " + count;
+      document.getElementById("counter").textContent =
+        "Генераций: " + count;
     }
 
     function animateGeneration(code) {
+      if (busy) return;
+
       busy = true;
       generateBtn.disabled = true;
       generateBtn.textContent = "✨ Генерация...";
       rarityEl.textContent = "🎲 Крутим...";
-      descriptionEl.textContent = "Выбираем случайные символы";
+      descriptionEl.textContent =
+        "Выбираем случайные символы";
 
       const cells = [...resultEl.children];
-      cells.forEach(cell => cell.classList.add("rolling"));
+
+      cells.forEach(cell => {
+        cell.classList.add("rolling");
+      });
 
       let ticks = 0;
 
       const animation = setInterval(() => {
-        cells.forEach(cell => cell.textContent = randomSymbol());
+        cells.forEach(cell => {
+          cell.textContent = randomSymbol();
+        });
+
         ticks++;
 
         if (ticks >= 12) {
@@ -286,14 +465,20 @@ async function checkAdminAccess() {
           });
 
           const [name, description] = getRarity(code);
+
           rarityEl.textContent = name;
           descriptionEl.textContent = description;
 
-          history.unshift({ code, rarity: name });
+          history.unshift({
+            code,
+            rarity: name
+          });
+
           history = history.slice(0, 10);
           count++;
 
           renderHistory();
+
           tg?.HapticFeedback?.impactOccurred("light");
 
           generateBtn.disabled = false;
@@ -304,15 +489,114 @@ async function checkAdminAccess() {
     }
 
     generateBtn.addEventListener("click", () => {
-      if (!busy) animateGeneration(generateCode());
+      animateGeneration(generateCode());
     });
 
     document.getElementById("clear").addEventListener("click", () => {
       if (busy) return;
+
       history = [];
       count = 0;
       renderHistory();
     });
+
+    // Проверка доступа через Cloudflare Worker
+    async function checkAdminAccess() {
+      if (!tg?.initData) {
+        alert(
+          "Открой игру через Telegram, используя кнопку меню бота."
+        );
+        return false;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_URL}/admin/check`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Telegram-Init-Data": tg.initData
+            },
+            body: JSON.stringify({})
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok || data.admin !== true) {
+          alert("Доступ администратора запрещён.");
+          return false;
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Admin check failed:", error);
+        alert(
+          "Не удалось связаться с сервером. Проверь настройки Worker."
+        );
+        return false;
+      }
+    }
+
+    const adminLogin = document.getElementById("adminLogin");
+    const adminEditor = document.getElementById("adminEditor");
+    const adminStatus = document.getElementById("adminStatus");
+
+    adminLogin.addEventListener("click", async () => {
+      if (isAdmin) return;
+
+      adminLogin.disabled = true;
+      adminStatus.textContent = "Проверяем доступ...";
+
+      try {
+        const allowed = await checkAdminAccess();
+
+        if (!allowed) {
+          adminStatus.textContent =
+            "Доступ не подтверждён.";
+          return;
+        }
+
+        isAdmin = true;
+        adminEditor.hidden = false;
+        adminLogin.hidden = true;
+
+        adminStatus.textContent =
+          "Доступ администратора подтверждён.";
+      } finally {
+        adminLogin.disabled = false;
+      }
+    });
+
+    // Пока применяет изменения только в открытой странице
+    document.getElementById("applySettings")
+      .addEventListener("click", () => {
+        if (!isAdmin) return;
+
+        const title =
+          document.getElementById("gameTitle").value.trim();
+
+        const subtitle =
+          document.getElementById("gameSubtitle").value.trim();
+
+        if (!title || !subtitle) {
+          adminStatus.textContent =
+            "Заполни название и описание.";
+          return;
+        }
+
+        document.getElementById("gameTitleDisplay")
+          .textContent = title;
+
+        document.getElementById("gameSubtitleDisplay")
+          .textContent = subtitle;
+
+        document.title = title;
+
+        adminStatus.textContent =
+          "Изменения применены. Пока они не сохраняются после перезагрузки.";
+      });
 
     renderHistory();
   </script>
