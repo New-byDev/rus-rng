@@ -157,6 +157,39 @@
     const tg = window.Telegram?.WebApp;
     tg?.ready();
     tg?.expand();
+    
+const API_URL = "https://rus-rng-api.mirikpirik2009.workers.dev";
+
+async function checkAdminAccess() {
+  if (!tg?.initData) {
+    alert("Открой игру через Telegram.");
+    return false;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/admin/check`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Telegram-Init-Data": tg.initData
+      },
+      body: JSON.stringify({})
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.admin) {
+      alert("Доступ администратора запрещён.");
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    alert("Не удалось связаться с сервером.");
+    return false;
+  }
+}
+
 
     // 10 цифр и 33 русские буквы, включая Ё
     const alphabet = "0123456789АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
