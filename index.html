@@ -1,497 +1,259 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#10101d">
   <title>RUS RNG</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
   <style>
-    * { box-sizing: border-box; }
-
-    :root {
-      --bg: #10101d;
-      --panel: #1b1930;
-      --purple: #8b5cf6;
-      --text: #fff;
-      --muted: #aaa7c8;
-      --border: #393253;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      padding: 20px 14px;
-      font-family: Arial, sans-serif;
-      color: var(--text);
-      background: radial-gradient(ellipse at top, #302052, var(--bg) 70%);
-    }
-
-    .app {
-      max-width: 430px;
-      margin: auto;
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 32px;
-      letter-spacing: 4px;
-      margin: 8px 0 5px;
-    }
-
-    h2 { font-size: 19px; }
-
-    .muted {
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .panel {
-      padding: 19px 14px;
-      margin-top: 18px;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      background: var(--panel);
-    }
-
-    #adminPanel { text-align: left; }
-    #adminPanel h2,
-    #adminPanel > p { text-align: center; }
-
-    .label {
-      color: var(--muted);
-      font-size: 12px;
-      letter-spacing: 2px;
-    }
-
-    .result {
-      display: flex;
-      justify-content: center;
-      gap: 5px;
-      margin: 20px 0;
-    }
-
-    .symbol {
-      display: grid;
-      place-items: center;
-      width: 48px;
-      height: 56px;
-      border: 1px solid #50447d;
-      border-radius: 10px;
-      background: #282344;
-      color: #d4c4ff;
-      font-size: 24px;
-      font-weight: bold;
-    }
-
-    .rolling { animation: roll .1s infinite alternate; }
-
-    @keyframes roll {
-      from { transform: translateY(-3px); }
-      to { transform: translateY(3px); }
-    }
-
-    button { cursor: pointer; font-family: inherit; }
-
-    button:disabled {
-      opacity: .6;
-      cursor: wait;
-    }
-
-    .generate {
-      width: 100%;
-      padding: 15px;
-      border: 0;
-      border-radius: 13px;
-      color: white;
-      background: linear-gradient(100deg, #7957ff, #a04dff);
-      font-size: 16px;
-      font-weight: bold;
-    }
-
-    .secondary {
-      padding: 12px;
-      border: 1px solid #514574;
-      border-radius: 10px;
-      background: #282344;
-      color: white;
-    }
-
-    #adminLogin { width: 100%; }
-
-    #adminEditor label {
-      display: block;
-      margin: 15px 0 7px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    #adminEditor input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #514574;
-      border-radius: 10px;
-      background: #282344;
-      color: white;
-      font-size: 15px;
-    }
-
-    #applySettings { margin-top: 16px; }
-    #adminStatus { overflow-wrap: anywhere; }
-
-    .rarity {
-      margin: 16px 0 4px;
-      font-size: 20px;
-      font-weight: bold;
-    }
-
-    .section {
-      margin: 23px 0 12px;
-      text-align: left;
-      font-size: 18px;
-    }
-
-    .history-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-top: 8px;
-      padding: 12px;
-      background: var(--panel);
-      border-radius: 12px;
-    }
-
-    .history-code {
-      font-weight: bold;
-      letter-spacing: 2px;
-    }
-
-    .history-rarity {
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-top: 15px;
-    }
-
-    [hidden] { display: none !important; }
-
-    @media (max-width: 360px) {
-      .symbol {
-        width: 42px;
-        height: 52px;
-        font-size: 21px;
-      }
-
-      .result { gap: 4px; }
-    }
+    *{box-sizing:border-box} :root{--bg:#10101d;--panel:#1b1930;--accent:#8b5cf6;--accent2:#a04dff;--text:#fff;--muted:#aaa7c8;--border:#393253;--symbol-bg:#282344;--symbol-text:#d4c4ff;--radius:20px;--space:18px;--font:Arial,sans-serif}
+    body{margin:0;min-height:100vh;padding:16px 12px 32px;font-family:var(--font);color:var(--text);background:radial-gradient(ellipse at top,#302052,var(--bg) 70%);transition:background .2s,color .2s}
+    button,input,textarea,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.55;cursor:wait} [hidden]{display:none!important}
+    .app{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:var(--space)}
+    #titleHeading{font-size:clamp(28px,6vw,38px);letter-spacing:3px;margin:8px 0 0;text-align:center;order:0}
+    #gameSubtitleDisplay{text-align:center;margin-top:-12px;order:1}
+    .muted{color:var(--muted);font-size:13px;line-height:1.5}.panel{padding:18px 16px;border:1px solid var(--border);border-radius:var(--radius);background:var(--panel);box-shadow:0 12px 30px #00000016;min-width:0}
+    #adminPanel{order:2;text-align:left}#adminPanel h2,#adminPanel>p{text-align:center;margin-top:0}
+    h2{font-size:19px;margin:0 0 10px}h3{font-size:15px;margin:0 0 10px}.label{color:var(--muted);font-size:11px;letter-spacing:2px}
+    .button{border:0;border-radius:12px;padding:12px 14px;color:white;font-weight:700;background:linear-gradient(100deg,var(--accent),var(--accent2));transition:filter .15s,transform .15s}.button:hover{filter:brightness(1.08)}.button:active{transform:scale(.99)}.button.secondary{border:1px solid var(--border);background:var(--symbol-bg);color:var(--text)}.button.danger{border:1px solid #9b4545;background:#49262d}.button.small{padding:8px 10px;font-size:12px}.full{width:100%}
+    .field{display:flex;flex-direction:column;gap:7px;min-width:0}.field label,.field .field-label{color:var(--muted);font-size:12px}.field input,.field textarea,.field select{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:10px;background:var(--symbol-bg);color:var(--text);outline:none;min-width:0}.field textarea{min-height:92px;resize:vertical}.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent)}.field input[type=color]{height:44px;padding:4px}.field input[type=range]{padding:0;accent-color:var(--accent)}
+    .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.stack{display:flex;flex-direction:column;gap:13px}.row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.row>*{min-width:0}.row.between{justify-content:space-between}.section-title{margin:18px 0 10px;font-size:14px;font-weight:700}.status{min-height:20px;overflow-wrap:anywhere;margin:10px 0 0;color:var(--muted);font-size:12px}.status.ok{color:#7ee0b0}.status.error{color:#ff9999}
+    .tabs{display:flex;gap:7px;overflow:auto;padding:3px 0 6px;order:3}.tab{flex:1;white-space:nowrap;border:1px solid var(--border);border-radius:11px;padding:10px 12px;background:var(--panel);color:var(--muted);font-size:13px}.tab.active{background:var(--accent);border-color:var(--accent);color:white}.admin-view{order:4}.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stat{padding:14px;border:1px solid var(--border);border-radius:14px;background:#ffffff05}.stat strong{display:block;font-size:20px;margin-top:5px}.preview{padding:18px;border:1px dashed var(--border);border-radius:16px;background:#00000012}.preview .mini-title{text-align:center;font-size:21px;font-weight:800;letter-spacing:2px}.preview .mini-sub{text-align:center;font-size:12px;color:var(--muted);margin:5px 0 15px}.preview .mini-panel{border:1px solid var(--border);border-radius:var(--radius);background:var(--panel);padding:14px;margin-top:10px;text-align:center}.preview .mini-button{border:0;border-radius:10px;padding:12px;background:linear-gradient(100deg,var(--accent),var(--accent2));color:#fff;font-weight:700;width:100%;margin-top:10px}.preview .mini-symbols{display:flex;justify-content:center;gap:4px;margin:14px 0}.preview .mini-symbols span{display:grid;place-items:center;min-width:0;width:34px;height:42px;border-radius:8px;background:var(--symbol-bg);color:var(--symbol-text);font-weight:bold}
+    .order-list{display:flex;flex-direction:column;gap:7px}.order-item{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid var(--border);border-radius:10px;background:#ffffff04;cursor:grab}.order-item.dragging{opacity:.4}.order-item .grip{color:var(--muted)}.order-item .order-name{flex:1;font-size:13px}.order-item button{padding:4px 8px;background:var(--symbol-bg);border:1px solid var(--border);color:var(--text);border-radius:7px}
+    #generatorPanel{order:3;text-align:center}#historyTitle{order:4;margin:3px 0 -10px;font-size:18px}#history{order:5}#bottom{order:6;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.result{display:flex;justify-content:center;gap:5px;margin:20px 0}.symbol{display:grid;place-items:center;width:clamp(36px,10vw,52px);height:56px;border:1px solid var(--border);border-radius:10px;background:var(--symbol-bg);color:var(--symbol-text);font-size:24px;font-weight:bold}.rolling{animation:roll .1s infinite alternate}@keyframes roll{from{transform:translateY(-3px)}to{transform:translateY(3px)}}.generate{width:100%;padding:15px;border:0;border-radius:12px;color:white;background:linear-gradient(100deg,var(--accent),var(--accent2));font-size:16px;font-weight:bold}.rarity{margin:16px 0 4px;font-size:20px;font-weight:bold}.history-item{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:8px;padding:12px;background:var(--panel);border:1px solid #ffffff08;border-radius:12px}.history-code{font-weight:bold;letter-spacing:2px}.history-rarity{color:var(--muted);font-size:12px}
+    .note{padding:11px 12px;border-radius:10px;background:#8b5cf615;border:1px solid #8b5cf633;color:var(--muted);font-size:12px;line-height:1.5}.check-row{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:13px}.check-row input{accent-color:var(--accent)}.divider{height:1px;background:var(--border);margin:15px 0}
+    @media(max-width:520px){.grid.three{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-grid{grid-template-columns:1fr}.panel{padding:15px 12px}.tab{font-size:12px;padding:10px 9px}.result{gap:4px}.symbol{height:51px;font-size:21px}}
   </style>
 </head>
-
 <body>
-<main class="app">
+<main class="app" id="appRoot">
+  <h1 id="titleHeading"><span id="gameTitleDisplay">RUS RNG</span></h1>
+  <div class="muted" id="gameSubtitleDisplay">Русский генератор случайных комбинаций</div>
 
-  <h1 id="gameTitleDisplay">RUS RNG</h1>
-  <div class="muted" id="gameSubtitleDisplay">
-    Русский генератор случайных комбинаций
-  </div>
-
-  <!-- АДМИН-ПАНЕЛЬ ТЕПЕРЬ НАХОДИТСЯ СВЕРХУ -->
   <section class="panel" id="adminPanel">
-    <h2>⚙️ Админ-панель</h2>
-    <p class="muted">Управление настройками RUS RNG</p>
-
-    <button class="secondary" id="adminLogin">
-      🔐 Войти как администратор
-    </button>
-
+    <h2>⚙️ RUS RNG Control Center</h2>
+    <p class="muted">Единая панель управления игрой и Telegram-ботом</p>
+    <button class="button secondary full" id="adminLogin">🔐 Войти как администратор</button>
     <div id="adminEditor" hidden>
-      <label for="gameTitle">Название игры</label>
-      <input id="gameTitle" value="RUS RNG" maxlength="40">
-
-      <label for="gameSubtitle">Описание игры</label>
-      <input
-        id="gameSubtitle"
-        value="Русский генератор случайных комбинаций"
-        maxlength="120"
-      >
-
-      <button class="generate" id="applySettings">
-        Применить настройки
-      </button>
-
-      <p class="muted" id="adminStatus" role="status"></p>
+      <div class="row between"><span class="status ok" id="adminStatus" role="status">Доступ подтверждён</span><button class="button secondary small" id="logoutButton">Выйти</button></div>
+      <div class="divider"></div>
+      <div class="admin-grid">
+        <div class="stat"><span class="muted">API</span><strong id="apiStatus">Проверка…</strong></div>
+        <div class="stat"><span class="muted">Статус редактора</span><strong>Администратор</strong></div>
+      </div>
     </div>
   </section>
 
-  <!-- ГЕНЕРАТОР -->
-  <section class="panel">
+  <div class="tabs" id="adminTabs" hidden>
+    <button class="tab active" data-tab="dashboard">Обзор</button>
+    <button class="tab" data-tab="design">Дизайн</button>
+    <button class="tab" data-tab="layout">Расположение</button>
+    <button class="tab" data-tab="bot">Telegram-бот</button>
+  </div>
+
+  <section class="panel admin-view" id="view-dashboard" hidden>
+    <h2>Обзор проекта</h2><p class="muted">Сохранение оформления работает через Cloudflare KV. Настройки становятся общими после публикации.</p>
+    <div class="row" style="margin-top:14px"><button class="button" id="refreshHealth">Проверить API</button><button class="button secondary" id="reloadSettings">Загрузить настройки</button></div>
+    <div class="section-title">Быстрые действия</div>
+    <div class="row"><button class="button secondary" id="goDesign">🎨 Открыть редактор</button><button class="button secondary" id="goBot">🤖 Настройки бота</button></div>
+    <div class="section-title">Предпросмотр</div><div class="preview" id="livePreview"><div class="mini-title" id="previewTitle">RUS RNG</div><div class="mini-sub" id="previewSubtitle">Русский генератор случайных комбинаций</div><div class="mini-panel"><div class="label">ТВОЯ КОМБИНАЦИЯ</div><div class="mini-symbols"><span>R</span><span>U</span><span>S</span><span>7</span><span>2</span><span>9</span></div><button class="mini-button" id="previewGenerate">🎲 Сгенерировать</button></div></div>
+    <div class="status" id="dashboardStatus" role="status"></div>
+  </section>
+
+  <section class="panel admin-view" id="view-design" hidden>
+    <h2>🎨 Визуальный редактор</h2><p class="muted">Изменяй оформление и смотри на результат в предпросмотре.</p>
+    <div class="section-title">Тексты интерфейса</div>
+    <div class="stack">
+      <div class="field"><label for="cfgTitle">Название приложения</label><input id="cfgTitle" maxlength="40" value="RUS RNG"></div>
+      <div class="field"><label for="cfgSubtitle">Подзаголовок</label><input id="cfgSubtitle" maxlength="120" value="Русский генератор случайных комбинаций"></div>
+      <div class="field"><label for="cfgGenerate">Текст кнопки генерации</label><input id="cfgGenerate" maxlength="50" value="🎲 Сгенерировать"></div>
+      <div class="field"><label for="cfgClear">Текст кнопки очистки</label><input id="cfgClear" maxlength="30" value="Очистить"></div>
+    </div>
+    <div class="section-title">Палитра цветов</div>
+    <div class="grid three">
+      <div class="field"><label for="cfgBackground">Фон страницы</label><input type="color" id="cfgBackground" value="#10101d"></div>
+      <div class="field"><label for="cfgPanel">Панели</label><input type="color" id="cfgPanel" value="#1b1930"></div>
+      <div class="field"><label for="cfgAccent">Основной акцент</label><input type="color" id="cfgAccent" value="#8b5cf6"></div>
+      <div class="field"><label for="cfgAccent2">Второй акцент</label><input type="color" id="cfgAccent2" value="#a04dff"></div>
+      <div class="field"><label for="cfgText">Основной текст</label><input type="color" id="cfgText" value="#ffffff"></div>
+      <div class="field"><label for="cfgMuted">Вторичный текст</label><input type="color" id="cfgMuted" value="#aaa7c8"></div>
+      <div class="field"><label for="cfgBorder">Рамки</label><input type="color" id="cfgBorder" value="#393253"></div>
+      <div class="field"><label for="cfgSymbolBg">Фон символов</label><input type="color" id="cfgSymbolBg" value="#282344"></div>
+      <div class="field"><label for="cfgSymbolText">Цвет символов</label><input type="color" id="cfgSymbolText" value="#d4c4ff"></div>
+    </div>
+    <div class="section-title">Размеры и типографика</div>
+    <div class="grid">
+      <div class="field"><label for="cfgFont">Шрифт</label><select id="cfgFont"><option value="Arial, sans-serif">Arial</option><option value="Verdana, sans-serif">Verdana</option><option value="Tahoma, sans-serif">Tahoma</option><option value="Trebuchet MS, sans-serif">Trebuchet MS</option><option value="Georgia, serif">Georgia</option><option value="system-ui, sans-serif">System UI</option></select></div>
+      <div class="field"><label for="cfgRadius">Скругление панелей: <span id="radiusValue">20</span> px</label><input type="range" id="cfgRadius" min="4" max="36" value="20"></div>
+      <div class="field"><label for="cfgSpacing">Отступы: <span id="spacingValue">18</span> px</label><input type="range" id="cfgSpacing" min="8" max="32" value="18"></div>
+    </div>
+    <div class="section-title">Видимость блоков</div>
+    <div class="stack">
+      <label class="check-row"><input type="checkbox" id="cfgShowHistory" checked> Показывать историю выпадений</label>
+      <label class="check-row"><input type="checkbox" id="cfgShowRarity" checked> Показывать описание редкости</label>
+    </div>
+    <div class="section-title">Предпросмотр</div><div class="preview"><div class="mini-title" id="designPreviewTitle">RUS RNG</div><div class="mini-sub" id="designPreviewSubtitle">Русский генератор случайных комбинаций</div><div class="mini-panel"><div class="label">ТВОЯ КОМБИНАЦИЯ</div><div class="mini-symbols"><span>R</span><span>U</span><span>S</span><span>7</span><span>2</span><span>9</span></div><button class="mini-button" id="designPreviewButton">🎲 Сгенерировать</button></div></div>
+    <div class="row" style="margin-top:15px"><button class="button secondary" id="saveDraft">Сохранить черновик</button><button class="button" id="publishConfig">Опубликовать</button><button class="button danger" id="resetConfig">Сбросить</button></div>
+    <div class="status" id="designStatus" role="status"></div>
+  </section>
+
+  <section class="panel admin-view" id="view-layout" hidden>
+    <h2>🧩 Расположение блоков</h2><p class="muted">Перетаскивай строки, чтобы менять порядок элементов. Можно также использовать стрелки.</p>
+    <div class="order-list" id="orderList"></div>
+    <div class="row" style="margin-top:15px"><button class="button secondary" id="resetOrder">Вернуть порядок по умолчанию</button><button class="button" id="saveOrder">Сохранить порядок</button></div>
+    <div class="note" style="margin-top:12px">Изменение порядка меняет расположение блоков в Mini App. Системные элементы Telegram и внешнее меню Telegram переставлять нельзя.</div>
+    <div class="status" id="layoutStatus" role="status"></div>
+  </section>
+
+  <section class="panel admin-view" id="view-bot" hidden>
+    <h2>🤖 Управление Telegram-ботом</h2><p class="muted">Изменения команд и описания отправляются в Telegram Bot API. Для ответов на команды нужно подключить webhook.</p>
+    <div class="section-title">Сообщения бота</div>
+    <div class="stack">
+      <div class="field"><label for="botWelcome">Ответ на /start</label><textarea id="botWelcome" maxlength="3500"></textarea></div>
+      <div class="field"><label for="botHelp">Ответ на /help</label><textarea id="botHelp" maxlength="3500"></textarea></div>
+      <div class="field"><label for="botDescription">Описание бота (до 512 символов)</label><textarea id="botDescription" maxlength="512"></textarea></div>
+      <div class="field"><label for="botShortDescription">Короткое описание (до 120 символов)</label><input id="botShortDescription" maxlength="120"></div>
+      <button class="button" id="saveBotMessages">Сохранить тексты</button>
+    </div>
+    <div class="divider"></div>
+    <div class="section-title">Команды бота</div>
+    <div class="field"><label for="botCommands">Одна команда на строку: команда | описание</label><textarea id="botCommands">start | Запустить RUS RNG
+help | Помощь
+ generate | Получить комбинацию
+app | Открыть Mini App</textarea></div>
+    <button class="button" id="applyCommands" style="margin-top:10px">Применить команды в Telegram</button>
+    <div class="divider"></div>
+    <div class="section-title">Меню Telegram</div>
+    <div class="field"><label for="menuButtonText">Название кнопки меню</label><input id="menuButtonText" maxlength="64" value="Открыть RUS RNG"></div>
+    <div class="row" style="margin-top:10px"><button class="button secondary" id="applyMenuButton">Настроить кнопку меню</button><button class="button" id="setupWebhook">Подключить webhook</button></div>
+    <div class="note" style="margin-top:12px">Для webhook в Cloudflare должны быть настроены секреты APP_URL и BOT_WEBHOOK_SECRET. В адресе APP_URL укажи полный URL GitHub Pages, например https://username.github.io/rus-rng/ .</div>
+    <div class="row" style="margin-top:10px"><button class="button secondary" id="applyDescription">Обновить описание бота</button><button class="button secondary" id="applyShortDescription">Обновить короткое описание</button></div>
+    <div class="status" id="botStatus" role="status"></div>
+  </section>
+
+  <section class="panel" id="generatorPanel">
     <div class="label">ТВОЯ КОМБИНАЦИЯ</div>
-
-    <div class="result" id="result">
-      <div class="symbol">?</div>
-      <div class="symbol">?</div>
-      <div class="symbol">?</div>
-      <div class="symbol">?</div>
-      <div class="symbol">?</div>
-      <div class="symbol">?</div>
-    </div>
-
-    <button class="generate" id="generate">
-      🎲 Сгенерировать
-    </button>
-
-    <div class="rarity" id="rarity">Готов к генерации</div>
-    <div class="muted" id="description">
-      Нажми кнопку и испытай удачу!
-    </div>
+    <div class="result" id="result"><div class="symbol">?</div><div class="symbol">?</div><div class="symbol">?</div><div class="symbol">?</div><div class="symbol">?</div><div class="symbol">?</div></div>
+    <button class="generate" id="generate">🎲 Сгенерировать</button>
+    <div class="rarity" id="rarity">Готов к генерации</div><div class="muted" id="description">Нажми кнопку и испытай удачу!</div>
   </section>
-
-  <h2 class="section">📜 История выпадений</h2>
-  <div id="history">
-    <div class="muted">Пока результатов нет</div>
-  </div>
-
-  <div class="bottom">
-    <span class="muted" id="counter">Генераций: 0</span>
-    <button class="secondary" id="clear">Очистить</button>
-  </div>
-
+  <h2 id="historyTitle">📜 История выпадений</h2>
+  <div id="history"><div class="muted">Пока результатов нет</div></div>
+  <div id="bottom"><span class="muted" id="counter">Генераций: 0</span><button class="button secondary" id="clear">Очистить</button></div>
 </main>
-
 <script>
+(() => {
   const tg = window.Telegram?.WebApp;
-  tg?.ready();
-  tg?.expand();
+  tg?.ready(); tg?.expand();
+  const API_URL = "https://rus-rng-api.mirikpirik2009.workers.dev";
+  const DEFAULT_CONFIG = {
+    appTitle:"RUS RNG", subtitle:"Русский генератор случайных комбинаций", generateLabel:"🎲 Сгенерировать", clearLabel:"Очистить",
+    background:"#10101d", panel:"#1b1930", accent:"#8b5cf6", accent2:"#a04dff", text:"#ffffff", muted:"#aaa7c8", border:"#393253", symbolBackground:"#282344", symbolText:"#d4c4ff", font:"Arial, sans-serif", radius:20, spacing:18, showHistory:true, showRarity:true,
+    blockOrder:["titleHeading","gameSubtitleDisplay","adminPanel","generatorPanel","historyTitle","history","bottom"]
+  };
+  const DEFAULT_BOT = {welcome:"Привет! Это RUS RNG — генератор случайных комбинаций. Открой приложение через кнопку меню или используй /generate.",help:"Команды RUS RNG:\n/start — приветствие\n/help — помощь\n/generate — случайная комбинация\n/app — открыть Mini App",description:"RUS RNG — генератор случайных комбинаций",shortDescription:"Генератор случайных комбинаций"};
+  const BLOCKS = [{id:"titleHeading",name:"Заголовок"},{id:"gameSubtitleDisplay",name:"Подзаголовок"},{id:"adminPanel",name:"Вход и админ-панель"},{id:"generatorPanel",name:"Генератор"},{id:"historyTitle",name:"Заголовок истории"},{id:"history",name:"История выпадений"},{id:"bottom",name:"Счётчик и очистка"}];
+  const $ = id => document.getElementById(id);
+  let config = structuredClone(DEFAULT_CONFIG), isAdmin = false, history = [], count = 0, busy = false, dragId = null;
+  const colorIds = {background:"cfgBackground",panel:"cfgPanel",accent:"cfgAccent",accent2:"cfgAccent2",text:"cfgText",muted:"cfgMuted",border:"cfgBorder",symbolBackground:"cfgSymbolBg",symbolText:"cfgSymbolText"};
 
-  const API_URL =
-    "https://rus-rng-api.mirikpirik2009.workers.dev";
-
-  const alphabet =
-    "0123456789АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
-
-  const resultEl = document.getElementById("result");
-  const generateBtn = document.getElementById("generate");
-  const rarityEl = document.getElementById("rarity");
-  const descriptionEl = document.getElementById("description");
-  const historyEl = document.getElementById("history");
-
-  let history = [];
-  let count = 0;
-  let busy = false;
-  let isAdmin = false;
-
-  function randomSymbol() {
-    const values = new Uint32Array(1);
-    const range = 4294967296;
-    const limit =
-      Math.floor(range / alphabet.length) * alphabet.length;
-
-    do {
-      crypto.getRandomValues(values);
-    } while (values[0] >= limit);
-
-    return alphabet[values[0] % alphabet.length];
+  function status(id, message, kind="") { const el=$(id); if(!el)return; el.textContent=message; el.className="status"+(kind?" "+kind:""); }
+  async function api(path, method="GET", body=null) {
+    const headers={};
+    if (tg?.initData) headers["X-Telegram-Init-Data"]=tg.initData;
+    if(body!==null) headers["Content-Type"]="application/json";
+    const res=await fetch(API_URL+path,{method,headers,body:body===null?undefined:JSON.stringify(body)});
+    const data=await res.json().catch(()=>({ok:false,error:"Сервер вернул некорректный ответ"}));
+    if(!res.ok||data.ok!==true) throw new Error(data.error||`HTTP ${res.status}`);
+    return data;
   }
-
-  function generateCode() {
-    return Array.from({ length: 6 }, randomSymbol).join("");
+  function applyConfig(c) {
+    config={...structuredClone(DEFAULT_CONFIG),...(c||{})};
+    const root=document.documentElement.style;
+    root.setProperty("--bg",config.background);root.setProperty("--panel",config.panel);root.setProperty("--accent",config.accent);root.setProperty("--accent2",config.accent2);root.setProperty("--text",config.text);root.setProperty("--muted",config.muted);root.setProperty("--border",config.border);root.setProperty("--symbol-bg",config.symbolBackground);root.setProperty("--symbol-text",config.symbolText);root.setProperty("--radius",`${config.radius}px`);root.setProperty("--space",`${config.spacing}px`);root.setProperty("--font",config.font);
+    document.body.style.background=`radial-gradient(ellipse at top, ${mixColor(config.accent, config.background)}, ${config.background} 72%)`;
+    $("gameTitleDisplay").textContent=config.appTitle;$("gameSubtitleDisplay").textContent=config.subtitle;document.title=config.appTitle;
+    $("generate").textContent=config.generateLabel;$("clear").textContent=config.clearLabel;
+    $("historyTitle").hidden=!config.showHistory;$("history").hidden=!config.showHistory;$("bottom").hidden=!config.showHistory;$("rarity").hidden=!config.showRarity;$("description").hidden=!config.showRarity;
+    const order=config.blockOrder||DEFAULT_CONFIG.blockOrder;
+    order.forEach((id,i)=>{const el=$(id);if(el)el.style.order=String(i);});
+    updatePreviews();
   }
-
-  function getRarity(code) {
-    const unique = new Set(code).size;
-
-    if (unique === 1)
-      return ["🌌 ЛЕГЕНДАРНАЯ", "Все символы одинаковые"];
-
-    if (unique === 2)
-      return ["💎 ЭПИЧЕСКАЯ", "Два разных символа"];
-
-    if (unique === 3)
-      return ["🟣 РЕДКАЯ", "Три разных символа"];
-
-    if (unique === 6)
-      return ["✨ НЕОБЫЧНАЯ", "Все символы разные"];
-
-    return ["⚪ ОБЫЧНАЯ", "Стандартное выпадение"];
+  function mixColor(hex1,hex2){try{const a=hex1.match(/[a-f\d]{2}/gi).map(x=>parseInt(x,16));const b=hex2.match(/[a-f\d]{2}/gi).map(x=>parseInt(x,16));return `#${a.map((v,i)=>Math.round(v*.55+b[i]*.45).toString(16).padStart(2,"0")).join("")}`;}catch{return "#302052"}}
+  function readControls() {
+    const c={...config};c.appTitle=$("cfgTitle").value.trim()||DEFAULT_CONFIG.appTitle;c.subtitle=$("cfgSubtitle").value.trim()||DEFAULT_CONFIG.subtitle;c.generateLabel=$("cfgGenerate").value.trim()||DEFAULT_CONFIG.generateLabel;c.clearLabel=$("cfgClear").value.trim()||DEFAULT_CONFIG.clearLabel;
+    for(const [key,id] of Object.entries(colorIds))c[key]=$(id).value;
+    c.font=$("cfgFont").value;c.radius=Number($("cfgRadius").value);c.spacing=Number($("cfgSpacing").value);c.showHistory=$("cfgShowHistory").checked;c.showRarity=$("cfgShowRarity").checked;
+    return c;
   }
-
-  function renderHistory() {
-    historyEl.replaceChildren();
-
-    if (!history.length) {
-      const empty = document.createElement("div");
-      empty.className = "muted";
-      empty.textContent = "Пока результатов нет";
-      historyEl.appendChild(empty);
-    }
-
-    history.forEach(item => {
-      const row = document.createElement("div");
-      row.className = "history-item";
-
-      const code = document.createElement("span");
-      code.className = "history-code";
-      code.textContent = item.code;
-
-      const rarity = document.createElement("span");
-      rarity.className = "history-rarity";
-      rarity.textContent = item.rarity;
-
-      row.append(code, rarity);
-      historyEl.appendChild(row);
+  function fillControls(c) {
+    $("cfgTitle").value=c.appTitle;$("cfgSubtitle").value=c.subtitle;$("cfgGenerate").value=c.generateLabel;$("cfgClear").value=c.clearLabel;
+    for(const [key,id] of Object.entries(colorIds))$(id).value=c[key];
+    $("cfgFont").value=c.font;$("cfgRadius").value=c.radius;$("cfgSpacing").value=c.spacing;$("radiusValue").textContent=c.radius;$("spacingValue").textContent=c.spacing;$("cfgShowHistory").checked=c.showHistory;$("cfgShowRarity").checked=c.showRarity;
+  }
+  function updatePreviews() {
+    const c=config;["previewTitle","designPreviewTitle"].forEach(id=>$(id).textContent=c.appTitle);["previewSubtitle","designPreviewSubtitle"].forEach(id=>$(id).textContent=c.subtitle);["previewGenerate","designPreviewButton"].forEach(id=>$(id).textContent=c.generateLabel);
+    ["livePreview"].forEach(id=>{const el=$(id);el.style.color=c.text;el.style.background=c.background;el.style.borderColor=c.border;});
+    document.querySelectorAll(".preview .mini-panel").forEach(el=>{el.style.background=c.panel;el.style.borderColor=c.border;el.style.borderRadius=`${c.radius}px`;});
+    document.querySelectorAll(".preview .mini-symbols span").forEach(el=>{el.style.background=c.symbolBackground;el.style.color=c.symbolText;});
+    document.querySelectorAll(".preview .mini-button").forEach(el=>{el.style.background=`linear-gradient(100deg,${c.accent},${c.accent2})`;el.style.borderRadius=`${Math.max(6,c.radius-8)}px`;});
+    document.querySelectorAll(".preview .mini-sub").forEach(el=>el.style.color=c.muted);
+  }
+  function renderOrder() {
+    const list=$("orderList");list.replaceChildren();
+    (config.blockOrder||DEFAULT_CONFIG.blockOrder).forEach((id,index)=>{
+      const meta=BLOCKS.find(b=>b.id===id);if(!meta)return;
+      const row=document.createElement("div");row.className="order-item";row.draggable=true;row.dataset.id=id;
+      const grip=document.createElement("span");grip.className="grip";grip.textContent="⠿";
+      const name=document.createElement("span");name.className="order-name";name.textContent=meta.name;
+      const up=document.createElement("button");up.type="button";up.textContent="↑";up.title="Выше";up.disabled=index===0;up.addEventListener("click",()=>moveOrder(index,-1));
+      const down=document.createElement("button");down.type="button";down.textContent="↓";down.title="Ниже";down.disabled=index===config.blockOrder.length-1;down.addEventListener("click",()=>moveOrder(index,1));
+      row.append(grip,name,up,down);
+      row.addEventListener("dragstart",e=>{dragId=id;row.classList.add("dragging");e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",id);});
+      row.addEventListener("dragend",()=>{dragId=null;row.classList.remove("dragging");});
+      row.addEventListener("dragover",e=>{e.preventDefault();e.dataTransfer.dropEffect="move";});
+      row.addEventListener("drop",e=>{e.preventDefault();const source=dragId||e.dataTransfer.getData("text/plain");if(!source||source===id)return;const arr=[...config.blockOrder];arr.splice(arr.indexOf(source),1);arr.splice(arr.indexOf(id),0,source);config.blockOrder=arr;applyConfig(config);renderOrder();});
+      list.append(row);
     });
-
-    document.getElementById("counter").textContent =
-      "Генераций: " + count;
   }
+  function moveOrder(index,delta){const arr=[...config.blockOrder],target=index+delta;if(target<0||target>=arr.length)return;[arr[index],arr[target]]=[arr[target],arr[index]];config.blockOrder=arr;applyConfig(config);renderOrder();}
+  function setTab(tab){document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));document.querySelectorAll(".admin-view").forEach(v=>v.hidden=v.id!==`view-${tab}`);}
+  async function loadPublished(){try{const res=await fetch(`${API_URL}/config`);const data=await res.json();if(res.ok&&data.ok)applyConfig(data.config);}catch(e){console.warn("Published config load failed",e);}}
+  async function refreshHealth(){try{const data=await fetch(`${API_URL}/health`).then(r=>r.json());$("apiStatus").textContent=data.ok?"Онлайн":"Недоступен";status("dashboardStatus",data.ok?"API отвечает нормально.":"API не подтвердил работу.",data.ok?"ok":"error");}catch(e){$("apiStatus").textContent="Ошибка";status("dashboardStatus","Не удалось связаться с API: "+e.message,"error");}}
+  async function loadAdminData(){const data=await api("/admin/config");config=data.config;fillControls(config);applyConfig(config);renderOrder();const bot=await api("/admin/bot");const s={...DEFAULT_BOT,...bot.settings};$("botWelcome").value=s.welcome;$("botHelp").value=s.help;$("botDescription").value=s.description;$("botShortDescription").value=s.shortDescription;}
+  async function login(){if(!tg?.initData){alert("Открой Mini App через кнопку меню Telegram-бота.");return;}$("adminLogin").disabled=true;status("adminStatus","Проверяем доступ…");try{await api("/admin/check","POST",{});isAdmin=true;$("adminLogin").hidden=true;$("adminEditor").hidden=false;$("adminTabs").hidden=false;await loadAdminData();await refreshHealth();setTab("dashboard");status("adminStatus","Доступ подтверждён.","ok");}catch(e){status("adminStatus",e.message,"error");alert(e.message);}finally{$("adminLogin").disabled=false;}}
+  function showBotResult(message,ok=true){status("botStatus",message,ok?"ok":"error");}
+  async function adminPost(path,body,statusId){try{const data=await api(path,"POST",body);if(statusId)status(statusId,data.message||"Готово.","ok");return data;}catch(e){if(statusId)status(statusId,e.message,"error");throw e;}}
 
-  function animateGeneration(code) {
-    if (busy) return;
+  $("adminLogin").addEventListener("click",login);
+  $("logoutButton").addEventListener("click",()=>{isAdmin=false;$("adminEditor").hidden=true;$("adminTabs").hidden=true;$("adminLogin").hidden=false;status("adminStatus","Сеанс администратора завершён.");});
+  document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+  $("goDesign").addEventListener("click",()=>setTab("design"));$("goBot").addEventListener("click",()=>setTab("bot"));
+  $("refreshHealth").addEventListener("click",refreshHealth);
+  $("reloadSettings").addEventListener("click",async()=>{try{await loadAdminData();status("dashboardStatus","Настройки загружены.","ok");}catch(e){status("dashboardStatus",e.message,"error");}});
+  const liveInputs=["cfgTitle","cfgSubtitle","cfgGenerate","cfgClear",...Object.values(colorIds),"cfgFont","cfgRadius","cfgSpacing","cfgShowHistory","cfgShowRarity"];
+  liveInputs.forEach(id=>$(id).addEventListener("input",()=>{config=readControls();$("radiusValue").textContent=config.radius;$("spacingValue").textContent=config.spacing;applyConfig(config);renderOrder();}));
+  $("saveDraft").addEventListener("click",async()=>{try{config=readControls();const d=await adminPost("/admin/config",{action:"saveDraft",config},"designStatus");config=d.config;status("designStatus","Черновик сохранён на сервере.","ok");}catch{}});
+  $("publishConfig").addEventListener("click",async()=>{try{config=readControls();const d=await adminPost("/admin/config",{action:"publish",config},"designStatus");config=d.config;applyConfig(config);status("designStatus","Настройки опубликованы и применены для пользователей.","ok");}catch{}});
+  $("resetConfig").addEventListener("click",async()=>{if(!confirm("Сбросить черновик к стандартному оформлению? Чтобы применить его всем, нажми «Опубликовать»."))return;try{const d=await adminPost("/admin/config",{action:"reset"},"designStatus");config=d.config;fillControls(config);applyConfig(config);renderOrder();status("designStatus",d.message,"ok");}catch{}});
+  $("resetOrder").addEventListener("click",()=>{config.blockOrder=[...DEFAULT_CONFIG.blockOrder];applyConfig(config);renderOrder();status("layoutStatus","Порядок восстановлен локально. Сохрани или опубликуй настройки.");});
+  $("saveOrder").addEventListener("click",async()=>{try{config=readControls();const d=await adminPost("/admin/config",{action:"saveDraft",config},"layoutStatus");config=d.config;status("layoutStatus","Порядок сохранён в черновике. Для пользователей нажми «Опубликовать» в редакторе дизайна.","ok");}catch{}});
+  $("saveBotMessages").addEventListener("click",async()=>{try{const body={action:"saveMessages",settings:{welcome:$("botWelcome").value,help:$("botHelp").value,description:$("botDescription").value,shortDescription:$("botShortDescription").value}};const d=await adminPost("/admin/bot",body,"botStatus");showBotResult(d.message,true);}catch{}});
+  $("applyCommands").addEventListener("click",async()=>{const lines=$("botCommands").value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);const commands=[];for(const line of lines){const parts=line.split("|");if(parts.length<2){showBotResult(`Неверная строка: ${line}. Используй формат команда | описание`,false);return;}commands.push({command:parts[0].trim().replace(/^\//,""),description:parts.slice(1).join("|").trim()});}try{await adminPost("/admin/bot",{action:"setCommands",commands},null);showBotResult("Команды обновлены в Telegram.",true);}catch(e){showBotResult(e.message,false);}});
+  $("applyMenuButton").addEventListener("click",async()=>{try{await adminPost("/admin/bot",{action:"setMenuButton",text:$("menuButtonText").value.trim()||"Открыть RUS RNG"},null);showBotResult("Кнопка меню Telegram обновлена.",true);}catch(e){showBotResult(e.message,false);}});
+  $("setupWebhook").addEventListener("click",async()=>{if(!confirm("Подключить этот Cloudflare Worker как webhook Telegram-бота? Если у бота уже настроен другой webhook, он будет заменён."))return;try{const d=await adminPost("/admin/webhook",{},null);showBotResult(d.message||"Webhook подключён.",true);}catch(e){showBotResult(e.message,false);}});
+  $("applyDescription").addEventListener("click",async()=>{try{await adminPost("/admin/bot",{action:"setDescription",description:$("botDescription").value},null);showBotResult("Описание бота обновлено.",true);}catch(e){showBotResult(e.message,false);}});
+  $("applyShortDescription").addEventListener("click",async()=>{try{await adminPost("/admin/bot",{action:"setShortDescription",description:$("botShortDescription").value},null);showBotResult("Короткое описание обновлено.",true);}catch(e){showBotResult(e.message,false);}});
 
-    busy = true;
-    generateBtn.disabled = true;
-    generateBtn.textContent = "✨ Генерация...";
-    rarityEl.textContent = "🎲 Крутим...";
-    descriptionEl.textContent = "Выбираем случайные символы";
-
-    const cells = [...resultEl.children];
-    cells.forEach(cell => cell.classList.add("rolling"));
-
-    let ticks = 0;
-
-    const animation = setInterval(() => {
-      cells.forEach(cell => cell.textContent = randomSymbol());
-      ticks++;
-
-      if (ticks >= 12) {
-        clearInterval(animation);
-
-        cells.forEach((cell, i) => {
-          cell.textContent = code[i];
-          cell.classList.remove("rolling");
-        });
-
-        const [name, description] = getRarity(code);
-        rarityEl.textContent = name;
-        descriptionEl.textContent = description;
-
-        history.unshift({ code, rarity: name });
-        history = history.slice(0, 10);
-        count++;
-
-        renderHistory();
-        tg?.HapticFeedback?.impactOccurred("light");
-
-        generateBtn.disabled = false;
-        generateBtn.textContent = "🎲 Сгенерировать ещё";
-        busy = false;
-      }
-    }, 80);
-  }
-
-  generateBtn.addEventListener("click", () => {
-    animateGeneration(generateCode());
-  });
-
-  document.getElementById("clear").addEventListener("click", () => {
-    if (busy) return;
-    history = [];
-    count = 0;
-    renderHistory();
-  });
-
-  async function checkAdminAccess() {
-    if (!tg?.initData) {
-      alert("Открой игру через кнопку меню Telegram-бота.");
-      return false;
-    }
-
-    try {
-      const response = await fetch(`${API_URL}/admin/check`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Telegram-Init-Data": tg.initData
-        },
-        body: JSON.stringify({})
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || data.admin !== true) {
-        alert(data.error || "Доступ администратора запрещён.");
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error(error);
-      alert("Ошибка соединения с сервером.");
-      return false;
-    }
-  }
-
-  const adminLogin = document.getElementById("adminLogin");
-  const adminEditor = document.getElementById("adminEditor");
-  const adminStatus = document.getElementById("adminStatus");
-
-  adminLogin.addEventListener("click", async () => {
-    if (isAdmin) return;
-
-    adminLogin.disabled = true;
-    adminStatus.textContent = "Проверяем доступ...";
-
-    try {
-      const allowed = await checkAdminAccess();
-
-      if (!allowed) {
-        adminStatus.textContent = "Доступ не подтверждён.";
-        return;
-      }
-
-      isAdmin = true;
-      adminEditor.hidden = false;
-      adminLogin.hidden = true;
-      adminStatus.textContent = "Доступ подтверждён.";
-    } finally {
-      adminLogin.disabled = false;
-    }
-  });
-
-  document.getElementById("applySettings")
-    .addEventListener("click", () => {
-      if (!isAdmin) return;
-
-      const title =
-        document.getElementById("gameTitle").value.trim();
-
-      const subtitle =
-        document.getElementById("gameSubtitle").value.trim();
-
-      if (!title || !subtitle) {
-        adminStatus.textContent =
-          "Заполни название и описание.";
-        return;
-      }
-
-      document.getElementById("gameTitleDisplay").textContent = title;
-      document.getElementById("gameSubtitleDisplay").textContent = subtitle;
-      document.title = title;
-
-      adminStatus.textContent =
-        "Изменения применены до перезагрузки страницы.";
-    });
-
-  renderHistory();
+  function randomSymbol(){const alphabet="0123456789АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";const values=new Uint32Array(1);const range=4294967296;const limit=Math.floor(range/alphabet.length)*alphabet.length;do{crypto.getRandomValues(values);}while(values[0]>=limit);return alphabet[values[0]%alphabet.length];}
+  function generateCode(){return Array.from({length:6},randomSymbol).join("");}
+  function getRarity(code){const unique=new Set(code).size;if(unique===1)return["🌌 ЛЕГЕНДАРНАЯ","Все символы одинаковые"];if(unique===2)return["💎 ЭПИЧЕСКАЯ","Два разных символа"];if(unique===3)return["🟣 РЕДКАЯ","Три разных символа"];if(unique===6)return["✨ НЕОБЫЧНАЯ","Все символы разные"];return["⚪ ОБЫЧНАЯ","Стандартное выпадение"]}
+  function renderHistory(){const el=$("history");el.replaceChildren();if(!history.length){const empty=document.createElement("div");empty.className="muted";empty.textContent="Пока результатов нет";el.append(empty);}history.forEach(item=>{const row=document.createElement("div");row.className="history-item";const code=document.createElement("span");code.className="history-code";code.textContent=item.code;const rarity=document.createElement("span");rarity.className="history-rarity";rarity.textContent=item.rarity;row.append(code,rarity);el.append(row);});$("counter").textContent="Генераций: "+count;}
+  function animateGeneration(code){if(busy)return;busy=true;$("generate").disabled=true;$("generate").textContent="✨ Генерация…";$("rarity").textContent="🎲 Крутим…";$("description").textContent="Выбираем случайные символы";const cells=[...$("result").children];cells.forEach(cell=>cell.classList.add("rolling"));let ticks=0;const animation=setInterval(()=>{cells.forEach(cell=>cell.textContent=randomSymbol());ticks++;if(ticks>=12){clearInterval(animation);cells.forEach((cell,i)=>{cell.textContent=code[i];cell.classList.remove("rolling")});const [name,desc]=getRarity(code);$("rarity").textContent=name;$("description").textContent=desc;history.unshift({code,rarity:name});history=history.slice(0,10);count++;renderHistory();tg?.HapticFeedback?.impactOccurred("light");$("generate").disabled=false;$("generate").textContent=config.generateLabel;busy=false;}},80);}
+  $("generate").addEventListener("click",()=>animateGeneration(generateCode()));$("clear").addEventListener("click",()=>{if(busy)return;history=[];count=0;renderHistory();});
+  applyConfig(DEFAULT_CONFIG);fillControls(DEFAULT_CONFIG);renderHistory();loadPublished();refreshHealth();
+})();
 </script>
 </body>
 </html>
