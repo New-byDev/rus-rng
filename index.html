@@ -6,13 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#10101d">
   <title>RUS RNG</title>
-
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     :root {
       --bg: #10101d;
@@ -26,14 +23,10 @@
     body {
       margin: 0;
       min-height: 100vh;
-      padding: 24px 16px;
+      padding: 20px 14px;
       font-family: Arial, sans-serif;
       color: var(--text);
-      background: radial-gradient(
-        ellipse at top,
-        #302052,
-        var(--bg) 70%
-      );
+      background: radial-gradient(ellipse at top, #302052, var(--bg) 70%);
     }
 
     .app {
@@ -43,14 +36,12 @@
     }
 
     h1 {
-      font-size: 34px;
+      font-size: 32px;
       letter-spacing: 4px;
-      margin-bottom: 5px;
+      margin: 8px 0 5px;
     }
 
-    h2 {
-      font-size: 20px;
-    }
+    h2 { font-size: 19px; }
 
     .muted {
       color: var(--muted);
@@ -58,12 +49,16 @@
     }
 
     .panel {
-      padding: 22px 14px;
-      margin-top: 24px;
+      padding: 19px 14px;
+      margin-top: 18px;
       border: 1px solid var(--border);
-      border-radius: 22px;
+      border-radius: 20px;
       background: var(--panel);
     }
+
+    #adminPanel { text-align: left; }
+    #adminPanel h2,
+    #adminPanel > p { text-align: center; }
 
     .label {
       color: var(--muted);
@@ -74,36 +69,31 @@
     .result {
       display: flex;
       justify-content: center;
-      gap: 6px;
-      margin: 24px 0;
+      gap: 5px;
+      margin: 20px 0;
     }
 
     .symbol {
       display: grid;
       place-items: center;
       width: 48px;
-      height: 58px;
+      height: 56px;
       border: 1px solid #50447d;
-      border-radius: 11px;
+      border-radius: 10px;
       background: #282344;
       color: #d4c4ff;
-      font-size: 25px;
+      font-size: 24px;
       font-weight: bold;
     }
 
-    .rolling {
-      animation: roll .1s infinite alternate;
-    }
+    .rolling { animation: roll .1s infinite alternate; }
 
     @keyframes roll {
       from { transform: translateY(-3px); }
       to { transform: translateY(3px); }
     }
 
-    button {
-      cursor: pointer;
-      font-family: inherit;
-    }
+    button { cursor: pointer; font-family: inherit; }
 
     button:disabled {
       opacity: .6;
@@ -112,23 +102,53 @@
 
     .generate {
       width: 100%;
-      padding: 17px;
+      padding: 15px;
       border: 0;
-      border-radius: 14px;
+      border-radius: 13px;
       color: white;
       background: linear-gradient(100deg, #7957ff, #a04dff);
-      font-size: 17px;
+      font-size: 16px;
       font-weight: bold;
     }
 
+    .secondary {
+      padding: 12px;
+      border: 1px solid #514574;
+      border-radius: 10px;
+      background: #282344;
+      color: white;
+    }
+
+    #adminLogin { width: 100%; }
+
+    #adminEditor label {
+      display: block;
+      margin: 15px 0 7px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    #adminEditor input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #514574;
+      border-radius: 10px;
+      background: #282344;
+      color: white;
+      font-size: 15px;
+    }
+
+    #applySettings { margin-top: 16px; }
+    #adminStatus { overflow-wrap: anywhere; }
+
     .rarity {
-      margin: 18px 0 4px;
-      font-size: 21px;
+      margin: 16px 0 4px;
+      font-size: 20px;
       font-weight: bold;
     }
 
     .section {
-      margin: 25px 0 12px;
+      margin: 23px 0 12px;
       text-align: left;
       font-size: 18px;
     }
@@ -139,7 +159,7 @@
       align-items: center;
       gap: 8px;
       margin-top: 8px;
-      padding: 13px;
+      padding: 12px;
       background: var(--panel);
       border-radius: 12px;
     }
@@ -154,451 +174,324 @@
       font-size: 12px;
     }
 
-    .secondary {
-      padding: 10px 14px;
-      border: 1px solid #514574;
-      border-radius: 10px;
-      background: transparent;
-      color: white;
-    }
-
     .bottom {
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 8px;
-      margin-top: 16px;
+      margin-top: 15px;
     }
 
-    #adminPanel {
-      text-align: left;
-    }
-
-    #adminPanel h2,
-    #adminPanel > p {
-      text-align: center;
-    }
-
-    #adminLogin {
-      width: 100%;
-      margin-top: 12px;
-    }
-
-    #adminEditor {
-      margin-top: 20px;
-    }
-
-    #adminEditor label {
-      display: block;
-      margin: 16px 0 7px;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    #adminEditor input {
-      width: 100%;
-      padding: 13px;
-      border: 1px solid #514574;
-      border-radius: 10px;
-      background: #282344;
-      color: white;
-      font-size: 15px;
-      outline: none;
-    }
-
-    #adminEditor input:focus {
-      border-color: var(--purple);
-    }
-
-    #applySettings {
-      margin-top: 18px;
-    }
-
-    #adminStatus {
-      margin-top: 12px;
-      overflow-wrap: anywhere;
-    }
-
-    [hidden] {
-      display: none !important;
-    }
+    [hidden] { display: none !important; }
 
     @media (max-width: 360px) {
       .symbol {
         width: 42px;
-        height: 53px;
-        font-size: 22px;
+        height: 52px;
+        font-size: 21px;
       }
 
-      .result {
-        gap: 4px;
-      }
+      .result { gap: 4px; }
     }
   </style>
 </head>
 
 <body>
-  <main class="app">
-    <h1 id="gameTitleDisplay">RUS RNG</h1>
+<main class="app">
 
-    <div class="muted" id="gameSubtitleDisplay">
-      Русский генератор случайных комбинаций
-    </div>
+  <h1 id="gameTitleDisplay">RUS RNG</h1>
+  <div class="muted" id="gameSubtitleDisplay">
+    Русский генератор случайных комбинаций
+  </div>
 
-    <section class="panel">
-      <div class="label">ТВОЯ КОМБИНАЦИЯ</div>
+  <!-- АДМИН-ПАНЕЛЬ ТЕПЕРЬ НАХОДИТСЯ СВЕРХУ -->
+  <section class="panel" id="adminPanel">
+    <h2>⚙️ Админ-панель</h2>
+    <p class="muted">Управление настройками RUS RNG</p>
 
-      <div class="result" id="result">
-        <div class="symbol">?</div>
-        <div class="symbol">?</div>
-        <div class="symbol">?</div>
-        <div class="symbol">?</div>
-        <div class="symbol">?</div>
-        <div class="symbol">?</div>
-      </div>
+    <button class="secondary" id="adminLogin">
+      🔐 Войти как администратор
+    </button>
 
-      <button class="generate" id="generate">
-        🎲 Сгенерировать
+    <div id="adminEditor" hidden>
+      <label for="gameTitle">Название игры</label>
+      <input id="gameTitle" value="RUS RNG" maxlength="40">
+
+      <label for="gameSubtitle">Описание игры</label>
+      <input
+        id="gameSubtitle"
+        value="Русский генератор случайных комбинаций"
+        maxlength="120"
+      >
+
+      <button class="generate" id="applySettings">
+        Применить настройки
       </button>
 
-      <div class="rarity" id="rarity">
-        Готов к генерации
-      </div>
+      <p class="muted" id="adminStatus" role="status"></p>
+    </div>
+  </section>
 
-      <div class="muted" id="description">
-        Нажми кнопку и испытай удачу!
-      </div>
-    </section>
+  <!-- ГЕНЕРАТОР -->
+  <section class="panel">
+    <div class="label">ТВОЯ КОМБИНАЦИЯ</div>
 
-    <h2 class="section">📜 История выпадений</h2>
-
-    <div id="history">
-      <div class="muted">Пока результатов нет</div>
+    <div class="result" id="result">
+      <div class="symbol">?</div>
+      <div class="symbol">?</div>
+      <div class="symbol">?</div>
+      <div class="symbol">?</div>
+      <div class="symbol">?</div>
+      <div class="symbol">?</div>
     </div>
 
-    <div class="bottom">
-      <span class="muted" id="counter">Генераций: 0</span>
-      <button class="secondary" id="clear">Очистить</button>
+    <button class="generate" id="generate">
+      🎲 Сгенерировать
+    </button>
+
+    <div class="rarity" id="rarity">Готов к генерации</div>
+    <div class="muted" id="description">
+      Нажми кнопку и испытай удачу!
     </div>
+  </section>
 
-    <section class="panel" id="adminPanel">
-      <h2>⚙️ Админ-панель</h2>
+  <h2 class="section">📜 История выпадений</h2>
+  <div id="history">
+    <div class="muted">Пока результатов нет</div>
+  </div>
 
-      <p class="muted">
-        Управление настройками RUS RNG
-      </p>
+  <div class="bottom">
+    <span class="muted" id="counter">Генераций: 0</span>
+    <button class="secondary" id="clear">Очистить</button>
+  </div>
 
-      <button class="secondary" id="adminLogin">
-        🔐 Войти как администратор
-      </button>
+</main>
 
-      <div id="adminEditor" hidden>
-        <label for="gameTitle">Название игры</label>
-        <input
-          id="gameTitle"
-          type="text"
-          value="RUS RNG"
-          maxlength="40"
-        >
+<script>
+  const tg = window.Telegram?.WebApp;
+  tg?.ready();
+  tg?.expand();
 
-        <label for="gameSubtitle">Описание игры</label>
-        <input
-          id="gameSubtitle"
-          type="text"
-          value="Русский генератор случайных комбинаций"
-          maxlength="120"
-        >
+  const API_URL =
+    "https://rus-rng-api.mirikpirik2009.workers.dev";
 
-        <button class="generate" id="applySettings">
-          Применить настройки
-        </button>
+  const alphabet =
+    "0123456789АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
 
-        <p class="muted" id="adminStatus" role="status"></p>
-      </div>
-    </section>
-  </main>
+  const resultEl = document.getElementById("result");
+  const generateBtn = document.getElementById("generate");
+  const rarityEl = document.getElementById("rarity");
+  const descriptionEl = document.getElementById("description");
+  const historyEl = document.getElementById("history");
 
-  <script>
-    const tg = window.Telegram?.WebApp;
+  let history = [];
+  let count = 0;
+  let busy = false;
+  let isAdmin = false;
 
-    tg?.ready();
-    tg?.expand();
+  function randomSymbol() {
+    const values = new Uint32Array(1);
+    const range = 4294967296;
+    const limit =
+      Math.floor(range / alphabet.length) * alphabet.length;
 
-    // Адрес Cloudflare Worker
-    const API_URL =
-      "https://rus-rng-api.mirikpirik2009.workers.dev";
+    do {
+      crypto.getRandomValues(values);
+    } while (values[0] >= limit);
 
-    // Цифры и русские буквы, включая Ё
-    const alphabet =
-      "0123456789АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+    return alphabet[values[0] % alphabet.length];
+  }
 
-    const resultEl = document.getElementById("result");
-    const generateBtn = document.getElementById("generate");
-    const rarityEl = document.getElementById("rarity");
-    const descriptionEl = document.getElementById("description");
-    const historyEl = document.getElementById("history");
+  function generateCode() {
+    return Array.from({ length: 6 }, randomSymbol).join("");
+  }
 
-    let history = [];
-    let count = 0;
-    let busy = false;
-    let isAdmin = false;
+  function getRarity(code) {
+    const unique = new Set(code).size;
 
-    // Криптографически стойкий выбор символа
-    function randomSymbol() {
-      const values = new Uint32Array(1);
-      const range = 4294967296;
-      const limit =
-        Math.floor(range / alphabet.length) * alphabet.length;
+    if (unique === 1)
+      return ["🌌 ЛЕГЕНДАРНАЯ", "Все символы одинаковые"];
 
-      do {
-        crypto.getRandomValues(values);
-      } while (values[0] >= limit);
+    if (unique === 2)
+      return ["💎 ЭПИЧЕСКАЯ", "Два разных символа"];
 
-      return alphabet[values[0] % alphabet.length];
+    if (unique === 3)
+      return ["🟣 РЕДКАЯ", "Три разных символа"];
+
+    if (unique === 6)
+      return ["✨ НЕОБЫЧНАЯ", "Все символы разные"];
+
+    return ["⚪ ОБЫЧНАЯ", "Стандартное выпадение"];
+  }
+
+  function renderHistory() {
+    historyEl.replaceChildren();
+
+    if (!history.length) {
+      const empty = document.createElement("div");
+      empty.className = "muted";
+      empty.textContent = "Пока результатов нет";
+      historyEl.appendChild(empty);
     }
 
-    function generateCode() {
-      return Array.from(
-        { length: 6 },
-        () => randomSymbol()
-      ).join("");
-    }
+    history.forEach(item => {
+      const row = document.createElement("div");
+      row.className = "history-item";
 
-    function getRarity(code) {
-      const unique = new Set(code).size;
+      const code = document.createElement("span");
+      code.className = "history-code";
+      code.textContent = item.code;
 
-      if (unique === 1) {
-        return [
-          "🌌 ЛЕГЕНДАРНАЯ",
-          "Все символы одинаковые"
-        ];
-      }
+      const rarity = document.createElement("span");
+      rarity.className = "history-rarity";
+      rarity.textContent = item.rarity;
 
-      if (unique === 2) {
-        return [
-          "💎 ЭПИЧЕСКАЯ",
-          "В комбинации два разных символа"
-        ];
-      }
+      row.append(code, rarity);
+      historyEl.appendChild(row);
+    });
 
-      if (unique === 3) {
-        return [
-          "🟣 РЕДКАЯ",
-          "В комбинации три разных символа"
-        ];
-      }
+    document.getElementById("counter").textContent =
+      "Генераций: " + count;
+  }
 
-      if (unique === 6) {
-        return [
-          "✨ НЕОБЫЧНАЯ",
-          "Все символы разные"
-        ];
-      }
+  function animateGeneration(code) {
+    if (busy) return;
 
-      return [
-        "⚪ ОБЫЧНАЯ",
-        "Стандартное выпадение"
-      ];
-    }
+    busy = true;
+    generateBtn.disabled = true;
+    generateBtn.textContent = "✨ Генерация...";
+    rarityEl.textContent = "🎲 Крутим...";
+    descriptionEl.textContent = "Выбираем случайные символы";
 
-    function renderHistory() {
-      historyEl.replaceChildren();
+    const cells = [...resultEl.children];
+    cells.forEach(cell => cell.classList.add("rolling"));
 
-      if (history.length === 0) {
-        const empty = document.createElement("div");
-        empty.className = "muted";
-        empty.textContent = "Пока результатов нет";
-        historyEl.appendChild(empty);
-      }
+    let ticks = 0;
 
-      history.forEach(item => {
-        const row = document.createElement("div");
-        row.className = "history-item";
+    const animation = setInterval(() => {
+      cells.forEach(cell => cell.textContent = randomSymbol());
+      ticks++;
 
-        const code = document.createElement("span");
-        code.className = "history-code";
-        code.textContent = item.code;
+      if (ticks >= 12) {
+        clearInterval(animation);
 
-        const rarity = document.createElement("span");
-        rarity.className = "history-rarity";
-        rarity.textContent = item.rarity;
-
-        row.append(code, rarity);
-        historyEl.appendChild(row);
-      });
-
-      document.getElementById("counter").textContent =
-        "Генераций: " + count;
-    }
-
-    function animateGeneration(code) {
-      if (busy) return;
-
-      busy = true;
-      generateBtn.disabled = true;
-      generateBtn.textContent = "✨ Генерация...";
-      rarityEl.textContent = "🎲 Крутим...";
-      descriptionEl.textContent =
-        "Выбираем случайные символы";
-
-      const cells = [...resultEl.children];
-
-      cells.forEach(cell => {
-        cell.classList.add("rolling");
-      });
-
-      let ticks = 0;
-
-      const animation = setInterval(() => {
-        cells.forEach(cell => {
-          cell.textContent = randomSymbol();
+        cells.forEach((cell, i) => {
+          cell.textContent = code[i];
+          cell.classList.remove("rolling");
         });
 
-        ticks++;
+        const [name, description] = getRarity(code);
+        rarityEl.textContent = name;
+        descriptionEl.textContent = description;
 
-        if (ticks >= 12) {
-          clearInterval(animation);
+        history.unshift({ code, rarity: name });
+        history = history.slice(0, 10);
+        count++;
 
-          cells.forEach((cell, i) => {
-            cell.textContent = code[i];
-            cell.classList.remove("rolling");
-          });
+        renderHistory();
+        tg?.HapticFeedback?.impactOccurred("light");
 
-          const [name, description] = getRarity(code);
+        generateBtn.disabled = false;
+        generateBtn.textContent = "🎲 Сгенерировать ещё";
+        busy = false;
+      }
+    }, 80);
+  }
 
-          rarityEl.textContent = name;
-          descriptionEl.textContent = description;
+  generateBtn.addEventListener("click", () => {
+    animateGeneration(generateCode());
+  });
 
-          history.unshift({
-            code,
-            rarity: name
-          });
+  document.getElementById("clear").addEventListener("click", () => {
+    if (busy) return;
+    history = [];
+    count = 0;
+    renderHistory();
+  });
 
-          history = history.slice(0, 10);
-          count++;
-
-          renderHistory();
-
-          tg?.HapticFeedback?.impactOccurred("light");
-
-          generateBtn.disabled = false;
-          generateBtn.textContent = "🎲 Сгенерировать ещё";
-          busy = false;
-        }
-      }, 80);
+  async function checkAdminAccess() {
+    if (!tg?.initData) {
+      alert("Открой игру через кнопку меню Telegram-бота.");
+      return false;
     }
 
-    generateBtn.addEventListener("click", () => {
-      animateGeneration(generateCode());
-    });
-
-    document.getElementById("clear").addEventListener("click", () => {
-      if (busy) return;
-
-      history = [];
-      count = 0;
-      renderHistory();
-    });
-
-    // Проверка доступа через Cloudflare Worker
-    async function checkAdminAccess() {
-      if (!tg?.initData) {
-        alert(
-          "Открой игру через Telegram, используя кнопку меню бота."
-        );
-        return false;
-      }
-
-      try {
-        const response = await fetch(
-          `${API_URL}/admin/check`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Telegram-Init-Data": tg.initData
-            },
-            body: JSON.stringify({})
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok || data.admin !== true) {
-          alert("Доступ администратора запрещён.");
-          return false;
-        }
-
-        return true;
-      } catch (error) {
-        console.error("Admin check failed:", error);
-        alert(
-          "Не удалось связаться с сервером. Проверь настройки Worker."
-        );
-        return false;
-      }
-    }
-
-    const adminLogin = document.getElementById("adminLogin");
-    const adminEditor = document.getElementById("adminEditor");
-    const adminStatus = document.getElementById("adminStatus");
-
-    adminLogin.addEventListener("click", async () => {
-      if (isAdmin) return;
-
-      adminLogin.disabled = true;
-      adminStatus.textContent = "Проверяем доступ...";
-
-      try {
-        const allowed = await checkAdminAccess();
-
-        if (!allowed) {
-          adminStatus.textContent =
-            "Доступ не подтверждён.";
-          return;
-        }
-
-        isAdmin = true;
-        adminEditor.hidden = false;
-        adminLogin.hidden = true;
-
-        adminStatus.textContent =
-          "Доступ администратора подтверждён.";
-      } finally {
-        adminLogin.disabled = false;
-      }
-    });
-
-    // Пока применяет изменения только в открытой странице
-    document.getElementById("applySettings")
-      .addEventListener("click", () => {
-        if (!isAdmin) return;
-
-        const title =
-          document.getElementById("gameTitle").value.trim();
-
-        const subtitle =
-          document.getElementById("gameSubtitle").value.trim();
-
-        if (!title || !subtitle) {
-          adminStatus.textContent =
-            "Заполни название и описание.";
-          return;
-        }
-
-        document.getElementById("gameTitleDisplay")
-          .textContent = title;
-
-        document.getElementById("gameSubtitleDisplay")
-          .textContent = subtitle;
-
-        document.title = title;
-
-        adminStatus.textContent =
-          "Изменения применены. Пока они не сохраняются после перезагрузки.";
+    try {
+      const response = await fetch(`${API_URL}/admin/check`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Telegram-Init-Data": tg.initData
+        },
+        body: JSON.stringify({})
       });
 
-    renderHistory();
-  </script>
+      const data = await response.json();
+
+      if (!response.ok || data.admin !== true) {
+        alert(data.error || "Доступ администратора запрещён.");
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error(error);
+      alert("Ошибка соединения с сервером.");
+      return false;
+    }
+  }
+
+  const adminLogin = document.getElementById("adminLogin");
+  const adminEditor = document.getElementById("adminEditor");
+  const adminStatus = document.getElementById("adminStatus");
+
+  adminLogin.addEventListener("click", async () => {
+    if (isAdmin) return;
+
+    adminLogin.disabled = true;
+    adminStatus.textContent = "Проверяем доступ...";
+
+    try {
+      const allowed = await checkAdminAccess();
+
+      if (!allowed) {
+        adminStatus.textContent = "Доступ не подтверждён.";
+        return;
+      }
+
+      isAdmin = true;
+      adminEditor.hidden = false;
+      adminLogin.hidden = true;
+      adminStatus.textContent = "Доступ подтверждён.";
+    } finally {
+      adminLogin.disabled = false;
+    }
+  });
+
+  document.getElementById("applySettings")
+    .addEventListener("click", () => {
+      if (!isAdmin) return;
+
+      const title =
+        document.getElementById("gameTitle").value.trim();
+
+      const subtitle =
+        document.getElementById("gameSubtitle").value.trim();
+
+      if (!title || !subtitle) {
+        adminStatus.textContent =
+          "Заполни название и описание.";
+        return;
+      }
+
+      document.getElementById("gameTitleDisplay").textContent = title;
+      document.getElementById("gameSubtitleDisplay").textContent = subtitle;
+      document.title = title;
+
+      adminStatus.textContent =
+        "Изменения применены до перезагрузки страницы.";
+    });
+
+  renderHistory();
+</script>
 </body>
 </html>
