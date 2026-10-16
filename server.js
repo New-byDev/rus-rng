@@ -12,14 +12,14 @@ const ALLOW_GUESTS = process.env.ALLOW_GUESTS === 'true';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'glass123';
 const KV_WORKER_URL = (process.env.KV_WORKER_URL || '').replace(/\/$/, '');
 const KV_SYNC_SECRET = process.env.KV_SYNC_SECRET || '';
-let globalUiConfig = { accent: '#7cf5c7', bg: '#080d13', title: 'STRIKE ARENA', description: 'Выбери режим. Тренируйся против бота без интернета или подключайся к онлайн-матчу.', hudTop: 0, rotateTop: 58, hideRotate: false, hideBotEasy: false, hideBotHard: false, hideOnline: false };
+let globalUiConfig = { accent: '#7cf5c7', bg: '#080d13', title: 'STRIKE ARENA', description: 'Выбери режим. Тренируйся против бота без интернета или подключайся к онлайн-матчу.', hudTop: 0, rotateTop: 58, hideRotate: false, hideBotEasy: false, hideBotHard: false, hideOnline: false, weapons: { deagle: { damage: 30, rate: 0.7, ammo: 7 }, sniper: { damage: 100, rate: 1, ammo: 5 }, rifle: { damage: 10, rate: 2, ammo: 30 } } };
 const uiClients = new Set();
 function cleanUiConfig(input) {
   const c = input && typeof input === 'object' ? input : {};
   const color = (v, fallback) => /^#[0-9a-f]{6}$/i.test(String(v || '')) ? String(v) : fallback;
   const num = (v, fallback, min, max) => Number.isFinite(Number(v)) ? Math.max(min, Math.min(max, Number(v))) : fallback;
   const txt = (v, fallback, max=180) => String(v ?? fallback).replace(/[<>\u0000-\u001f]/g, '').slice(0,max);
-  return { accent: color(c.accent, globalUiConfig.accent), bg: color(c.bg, globalUiConfig.bg), title: txt(c.title, globalUiConfig.title, 48), description: txt(c.description, globalUiConfig.description, 180), hudTop: num(c.hudTop, 0, 0, 25), rotateTop: num(c.rotateTop, 58, 0, 90), hideRotate: Boolean(c.hideRotate), hideBotEasy: Boolean(c.hideBotEasy), hideBotHard: Boolean(c.hideBotHard), hideOnline: Boolean(c.hideOnline) };
+  const defaults = globalUiConfig.weapons || {deagle:{damage:30,rate:.7,ammo:7},sniper:{damage:100,rate:1,ammo:5},rifle:{damage:10,rate:2,ammo:30}}; const w=c.weapons||{}; const weapon=(key)=>({damage:num(w[key]?.damage,defaults[key].damage,1,200),rate:num(w[key]?.rate,defaults[key].rate,.1,10),ammo:num(w[key]?.ammo,defaults[key].ammo,1,100)}); return { accent: color(c.accent, globalUiConfig.accent), bg: color(c.bg, globalUiConfig.bg), title: txt(c.title, globalUiConfig.title, 48), description: txt(c.description, globalUiConfig.description, 180), hudTop: num(c.hudTop, 0, 0, 25), rotateTop: num(c.rotateTop, 58, 0, 90), hideRotate: Boolean(c.hideRotate), hideBotEasy: Boolean(c.hideBotEasy), hideBotHard: Boolean(c.hideBotHard), hideOnline: Boolean(c.hideOnline), weapons: {deagle:weapon('deagle'),sniper:weapon('sniper'),rifle:weapon('rifle')} };
 }
 function sendUiConfig(ws) { send(ws, { type: 'uiConfig', config: globalUiConfig }); }
 function broadcastUiConfig() { for (const client of uiClients) sendUiConfig(client); }
@@ -139,7 +139,7 @@ function makeObstacles() {
 function createRoom() {
   const room = {
     id: `room-${Date.now().toString(36)}-${crypto.randomBytes(3).toString('hex')}`,
-    players: [], bullets: [], obstacles: makeObstacles(), lastTick: Date.now(), endAt: 0, over: false,
+    players: [], bullets: [], obstacles: makeObstacles(), lastTick: Date.now(), endAt: 0, over: false, countdownUntil: 0, lastCountdownSent: 0,
   };
   rooms.set(room.id, room);
   return room;
@@ -158,8 +158,8 @@ function createPlayer(ws) {
     username: profile?.username || null,
     x: 150, y: 150, hp: 100, kills: 0, deaths: 0,
     aimX: 1, aimY: 0,
-    input: { x: 0, y: 0, aimX: 1, aimY: 0, fire: false },
-    lastShot: 0,
+    input: { x: 0, y: 0, aimX: 1, aimY: 0, fire: false, weapon: 'rifle', reload: false },
+    weapon: 'rifle', ammo: 30, reloadingUntil: 0, lastShot: 0,
     invulnerableUntil: Date.now() + 1000,
     room: null,
   };
@@ -170,7 +170,7 @@ function publicPlayer(player) {
     id: player.id, name: player.name, username: player.username,
     x: player.x, y: player.y, hp: player.hp,
     kills: player.kills, deaths: player.deaths,
-    aimX: player.aimX, aimY: player.aimY,
+    aimX: player.aimX, aimY: player.aimY, weapon: player.weapon, ammo: player.ammo, maxAmmo: ({deagle:7,sniper:5,rifle:30}[player.weapon] || 30), reloading: Date.now() < player.reloadingUntil, reloadRemaining: Math.max(0, player.reloadingUntil - Date.now()),
   };
 }
 
@@ -180,7 +180,16 @@ function removeFromWaiting(ws) {
   }
 }
 
+function startCountdown(room) {
+  room.countdownUntil = Date.now() + 20000;
+  room.lastCountdownSent = 0;
+  room.over = false;
+  for (const player of room.players) player.input = { x: 0, y: 0, aimX: player.aimX || 1, aimY: player.aimY || 0, fire: false };
+  broadcast(room, { type: 'countdown', seconds: 20, endsAt: room.countdownUntil });
+}
+
 function startMatch(room) {
+  room.countdownUntil = 0;
   room.lastTick = Date.now();
   room.endAt = room.lastTick + ROUND_SECONDS * 1000;
   room.over = false;
@@ -193,7 +202,7 @@ function startMatch(room) {
     player.y = index === 0 ? 150 : WORLD.h - 150;
     player.aimX = index === 0 ? 1 : -1;
     player.aimY = 0;
-    player.input = { x: 0, y: 0, aimX: player.aimX, aimY: 0, fire: false };
+    player.input = { x: 0, y: 0, aimX: player.aimX, aimY: 0, fire: false, weapon: player.weapon || 'rifle', reload: false };
     player.invulnerableUntil = Date.now() + 1500;
   });
   broadcast(room, { type: 'match', roomId: room.id, seconds: ROUND_SECONDS });
@@ -238,7 +247,7 @@ function joinQueue(ws) {
   player.input.aimX = player.aimX;
 
   send(ws, { type: 'joined', id: player.id, name: player.name, roomId: room.id, waiting: room.players.length < 2 });
-  if (room.players.length === 2) startMatch(room);
+  if (room.players.length === 2) startCountdown(room);
   else waiting.push(ws);
 }
 
@@ -293,6 +302,11 @@ function finishRound(room, reason = 'time') {
 
 function tickRoom(room, now) {
   if (room.over || room.players.length !== 2) return;
+  if (room.countdownUntil) {
+    if (now >= room.countdownUntil) { startMatch(room); return; }
+    if (now - room.lastCountdownSent >= 500) { room.lastCountdownSent = now; broadcast(room, { type: 'countdown', seconds: Math.max(1, Math.ceil((room.countdownUntil - now) / 1000)), endsAt: room.countdownUntil }); }
+    return;
+  }
   const dt = Math.min(0.08, Math.max(0.001, (now - room.lastTick) / 1000));
   room.lastTick = now;
 
@@ -309,13 +323,17 @@ function tickRoom(room, now) {
       player.aimX = input.aimX || player.aimX;
       player.aimY = input.aimY || player.aimY;
 
-      if (input.fire && now - player.lastShot >= 240) {
-        player.lastShot = now;
-        room.bullets.push({
-          id: crypto.randomBytes(5).toString('hex'), ownerId: player.id,
+      const tuned = globalUiConfig.weapons || {deagle:{damage:30,rate:.7,ammo:7},sniper:{damage:100,rate:1,ammo:5},rifle:{damage:10,rate:2,ammo:30}}; const weapons = { deagle: { ...tuned.deagle, interval: 1000/tuned.deagle.rate, reloadMs: 1300 }, sniper: { ...tuned.sniper, interval: 1000/tuned.sniper.rate, reloadMs: 2200 }, rifle: { ...tuned.rifle, interval: 1000/tuned.rifle.rate, reloadMs: 1700 } };
+      const chosen = ['deagle','sniper','rifle'].includes(input.weapon) ? input.weapon : 'rifle';
+      if (player.weapon !== chosen) { player.weapon = chosen; player.ammo = weapons[chosen].ammo; player.reloadingUntil = 0; }
+      const weapon = weapons[player.weapon];
+      if (input.reload && !player.reloadingUntil && player.ammo < weapon.ammo) player.reloadingUntil = now + weapon.reloadMs;
+      if (player.reloadingUntil && now >= player.reloadingUntil) { player.ammo = weapon.ammo; player.reloadingUntil = 0; }
+      if (input.fire && !player.reloadingUntil && player.ammo > 0 && now - player.lastShot >= weapon.interval) {
+        player.lastShot = now; player.ammo--;
+        room.bullets.push({ id: crypto.randomBytes(5).toString('hex'), ownerId: player.id,
           x: player.x + player.aimX * 24, y: player.y + player.aimY * 24,
-          vx: player.aimX * 850, vy: player.aimY * 850, created: now, damage: 25,
-        });
+          vx: player.aimX * 1700, vy: player.aimY * 1700, created: now, damage: weapon.damage });
       }
     }
   }
@@ -453,6 +471,12 @@ wss.on('connection', (ws, req) => {
       return;
     }
 
+    if (message.type === 'setName' && ws.player) {
+      ws.player.name = cleanName(message.name);
+      broadcast(ws.room, { type: 'profileName', id: ws.player.id, name: ws.player.name });
+      return;
+    }
+
     if (message.type === 'leave') {
       removePlayer(ws);
       return;
@@ -472,6 +496,8 @@ wss.on('connection', (ws, req) => {
       ws.player.input.aimX = clampedAimX / aimLength;
       ws.player.input.aimY = clampedAimY / aimLength;
       ws.player.input.fire = Boolean(message.fire);
+      if (['deagle','sniper','rifle'].includes(message.weapon)) ws.player.input.weapon = message.weapon;
+      ws.player.input.reload = Boolean(message.reload);
     }
   });
 
