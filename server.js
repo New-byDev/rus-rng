@@ -23,22 +23,22 @@ function verifyTelegramInitData(initData) {
   if (!BOT_TOKEN) {
     return ALLOW_GUESTS
       ? { ok: true, user: null, dev: true }
-      : { ok: false, error: 'Сервер не настроен: добавь BOT_TOKEN в переменные окружения.' };
+      : { ok: false, code: 'AUTH_BOT_TOKEN_MISSING', error: '[AUTH_BOT_TOKEN_MISSING] Сервер не настроен: добавь BOT_TOKEN в переменные окружения.' };
   }
   if (!initData || typeof initData !== 'string') {
-    return { ok: false, error: 'Открой игру через Telegram.' };
+    return { ok: false, code: 'AUTH_INITDATA_MISSING', error: '[AUTH_INITDATA_MISSING] Сервер не получил initData. Открой игру из Telegram и проверь клиентский index.html.' };
   }
 
   let params;
   try {
     params = new URLSearchParams(initData);
   } catch {
-    return { ok: false, error: 'Не удалось прочитать данные Telegram.' };
+    return { ok: false, code: 'AUTH_INITDATA_PARSE_FAILED', error: '[AUTH_INITDATA_PARSE_FAILED] Не удалось прочитать initData.' };
   }
 
   const hash = params.get('hash');
   if (!hash || !/^[a-f0-9]{64}$/i.test(hash)) {
-    return { ok: false, error: 'Нет корректной подписи Telegram.' };
+    return { ok: false, code: 'AUTH_HASH_MISSING_OR_INVALID', error: '[AUTH_HASH_MISSING_OR_INVALID] В initData отсутствует корректный hash.' };
   }
 
   params.delete('hash');
@@ -53,23 +53,32 @@ function verifyTelegramInitData(initData) {
   const actual = Buffer.from(hash, 'hex');
   const expected = Buffer.from(expectedHash, 'hex');
   if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) {
-    return { ok: false, error: 'Подпись Telegram недействительна. Запусти игру из меню бота.' };
+    const diagnostic = {
+      code: 'AUTH_HASH_MISMATCH',
+      fields: [...params.keys()].sort(),
+      hasUser: params.has('user'),
+      hasAuthDate: params.has('auth_date'),
+      hasSignature: params.has('signature'),
+      botTokenConfigured: Boolean(BOT_TOKEN),
+    };
+    console.warn('[AUTH] Telegram initData hash mismatch', JSON.stringify(diagnostic));
+    return { ok: false, code: diagnostic.code, error: '[AUTH_HASH_MISMATCH] Подпись initData не совпала. Проверь BOT_TOKEN (должен быть от того же бота) и передачу Telegram.WebApp.initData. Подробности без секретов — в Logs Render.' };
   }
 
   const authDate = Number(params.get('auth_date') || 0);
   const nowSeconds = Math.floor(Date.now() / 1000);
   if (!Number.isFinite(authDate) || authDate <= 0 || authDate > nowSeconds + 60 || nowSeconds - authDate > 86400) {
-    return { ok: false, error: 'Данные Telegram устарели. Закрой и снова открой игру.' };
+    return { ok: false, code: 'AUTH_DATE_INVALID_OR_EXPIRED', error: '[AUTH_DATE_INVALID_OR_EXPIRED] Данные Telegram устарели или время некорректно. Закрой и снова открой игру.' };
   }
 
   let user;
   try {
     user = JSON.parse(params.get('user') || 'null');
   } catch {
-    return { ok: false, error: 'Профиль Telegram повреждён.' };
+    return { ok: false, code: 'AUTH_USER_JSON_INVALID', error: '[AUTH_USER_JSON_INVALID] Не удалось прочитать профиль пользователя из initData.' };
   }
   if (!user || user.id === undefined || user.id === null) {
-    return { ok: false, error: 'В данных Telegram не найден профиль игрока.' };
+    return { ok: false, code: 'AUTH_USER_MISSING', error: '[AUTH_USER_MISSING] В initData нет профиля пользователя.' };
   }
   return { ok: true, user };
 }
@@ -369,7 +378,8 @@ wss.on('connection', (ws, req) => {
       }
       const auth = verifyTelegramInitData(message.initData || '');
       if (!auth.ok) {
-        send(ws, { type: 'error', message: auth.error });
+        console.warn(`[AUTH] ${auth.code || 'AUTH_FAILED'}: ${auth.error}`);
+        send(ws, { type: 'error', code: auth.code || 'AUTH_FAILED', message: auth.error });
         ws.close(1008, 'Telegram authentication failed');
         return;
       }
