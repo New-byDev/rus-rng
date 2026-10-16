@@ -5,7 +5,7 @@ const crypto = require('node:crypto');
 const { WebSocketServer, WebSocket } = require('ws');
 
 const PORT = Number(process.env.PORT || 8787);
-const BOT_TOKEN = process.env.BOT_TOKEN || '';
+const BOT_TOKEN = (process.env.BOT_TOKEN || '').trim();
 const ALLOWED_ORIGIN = (process.env.ALLOWED_ORIGIN || '').replace(/\/$/, '');
 const ALLOW_GUESTS = process.env.ALLOW_GUESTS === 'true';
 // Configure ADMIN_PASSWORD in Render environment variables; this default supports the requested command.
@@ -85,7 +85,7 @@ function verifyTelegramInitData(initData) {
   // Telegram's bot validation data-check-string excludes hash and signature.
   params.delete('signature');
   const dataCheckString = [...params.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
     .map(([key, value]) => `${key}=${value}`)
     .join('\n');
   const secretKey = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
@@ -196,6 +196,8 @@ function startMatch(room) {
   room.bullets = [];
   room.players.forEach((player, index) => {
     player.hp = 100;
+    player.ammo = ({ deagle: 7, sniper: 5, rifle: 30 }[player.weapon] || 30);
+    player.reloadingUntil = 0;
     player.kills = 0;
     player.deaths = 0;
     player.x = index === 0 ? 150 : WORLD.w - 150;
@@ -301,7 +303,7 @@ function finishRound(room, reason = 'time') {
 }
 
 function tickRoom(room, now) {
-  if (room.over || room.players.length !== 2) return;
+  if (room.over || room.players.length < 1) return;
   if (room.countdownUntil) {
     if (now >= room.countdownUntil) { startMatch(room); return; }
     if (now - room.lastCountdownSent >= 500) { room.lastCountdownSent = now; broadcast(room, { type: 'countdown', seconds: Math.max(1, Math.ceil((room.countdownUntil - now) / 1000)), endsAt: room.countdownUntil }); }
@@ -366,7 +368,7 @@ function tickRoom(room, now) {
     return false;
   });
 
-  if (now >= room.endAt) {
+  if (room.players.length === 2 && room.endAt > 0 && now >= room.endAt) {
     finishRound(room, 'time');
     return;
   }
