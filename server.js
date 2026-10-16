@@ -42,10 +42,10 @@ function verifyTelegramInitData(initData) {
   }
 
   params.delete('hash');
-  // Telegram's bot validation data-check-string excludes hash and signature.
-  params.delete('signature');
+  // При проверке токеном бота исключается только hash.
+  // Поле signature, если оно присутствует, должно остаться в data-check-string.
   const dataCheckString = [...params.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([key, value]) => `${key}=${value}`)
     .join('\n');
   const secretKey = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
