@@ -8,6 +8,46 @@ const PORT = Number(process.env.PORT || 8787);
 const BOT_TOKEN = process.env.BOT_TOKEN || '';
 const ALLOWED_ORIGIN = (process.env.ALLOWED_ORIGIN || '').replace(/\/$/, '');
 const ALLOW_GUESTS = process.env.ALLOW_GUESTS === 'true';
+// Configure ADMIN_PASSWORD in Render environment variables; this default supports the requested command.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'glass123';
+const KV_WORKER_URL = (process.env.KV_WORKER_URL || '').replace(/\/$/, '');
+const KV_SYNC_SECRET = process.env.KV_SYNC_SECRET || '';
+let globalUiConfig = { accent: '#7cf5c7', bg: '#080d13', title: 'STRIKE ARENA', description: 'Выбери режим. Тренируйся против бота без интернета или подключайся к онлайн-матчу.', hudTop: 0, rotateTop: 58, hideRotate: false, hideBotEasy: false, hideBotHard: false, hideOnline: false };
+const uiClients = new Set();
+function cleanUiConfig(input) {
+  const c = input && typeof input === 'object' ? input : {};
+  const color = (v, fallback) => /^#[0-9a-f]{6}$/i.test(String(v || '')) ? String(v) : fallback;
+  const num = (v, fallback, min, max) => Number.isFinite(Number(v)) ? Math.max(min, Math.min(max, Number(v))) : fallback;
+  const txt = (v, fallback, max=180) => String(v ?? fallback).replace(/[<>\u0000-\u001f]/g, '').slice(0,max);
+  return { accent: color(c.accent, globalUiConfig.accent), bg: color(c.bg, globalUiConfig.bg), title: txt(c.title, globalUiConfig.title, 48), description: txt(c.description, globalUiConfig.description, 180), hudTop: num(c.hudTop, 0, 0, 25), rotateTop: num(c.rotateTop, 58, 0, 90), hideRotate: Boolean(c.hideRotate), hideBotEasy: Boolean(c.hideBotEasy), hideBotHard: Boolean(c.hideBotHard), hideOnline: Boolean(c.hideOnline) };
+}
+function sendUiConfig(ws) { send(ws, { type: 'uiConfig', config: globalUiConfig }); }
+function broadcastUiConfig() { for (const client of uiClients) sendUiConfig(client); }
+async function kvRequest(method, body) {
+  if (!KV_WORKER_URL || !KV_SYNC_SECRET) throw new Error('KV не настроен: укажи KV_WORKER_URL и KV_SYNC_SECRET в Render.');
+  const response = await fetch(`${KV_WORKER_URL}/config`, {
+    method,
+    headers: { 'authorization': `Bearer ${KV_SYNC_SECRET}`, 'content-type': 'application/json' },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    signal: AbortSignal.timeout(7000),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok || payload.ok === false) throw new Error(payload.error || `Cloudflare Worker ответил HTTP ${response.status}`);
+  return payload;
+}
+async function loadUiConfigFromKv() {
+  if (!KV_WORKER_URL || !KV_SYNC_SECRET) return;
+  try {
+    const payload = await kvRequest('GET');
+    if (payload.config && typeof payload.config === 'object') {
+      globalUiConfig = cleanUiConfig(payload.config);
+      broadcastUiConfig();
+      console.log('[KV] UI settings loaded');
+    }
+  } catch (error) {
+    console.error('[KV] Could not load UI settings:', error.message);
+  }
+}
 const ROUND_SECONDS = Math.max(30, Math.min(900, Number(process.env.ROUND_SECONDS || 180)));
 const TICK_MS = 50;
 const WORLD = { w: 1600, h: 1000 };
@@ -23,29 +63,29 @@ function verifyTelegramInitData(initData) {
   if (!BOT_TOKEN) {
     return ALLOW_GUESTS
       ? { ok: true, user: null, dev: true }
-      : { ok: false, code: 'AUTH_BOT_TOKEN_MISSING', error: '[AUTH_BOT_TOKEN_MISSING] Сервер не настроен: добавь BOT_TOKEN в переменные окружения.' };
+      : { ok: false, error: 'Сервер не настроен: добавь BOT_TOKEN в переменные окружения.' };
   }
   if (!initData || typeof initData !== 'string') {
-    return { ok: false, code: 'AUTH_INITDATA_MISSING', error: '[AUTH_INITDATA_MISSING] Сервер не получил initData. Открой игру из Telegram и проверь клиентский index.html.' };
+    return { ok: false, error: 'Открой игру через Telegram.' };
   }
 
   let params;
   try {
     params = new URLSearchParams(initData);
   } catch {
-    return { ok: false, code: 'AUTH_INITDATA_PARSE_FAILED', error: '[AUTH_INITDATA_PARSE_FAILED] Не удалось прочитать initData.' };
+    return { ok: false, error: 'Не удалось прочитать данные Telegram.' };
   }
 
   const hash = params.get('hash');
   if (!hash || !/^[a-f0-9]{64}$/i.test(hash)) {
-    return { ok: false, code: 'AUTH_HASH_MISSING_OR_INVALID', error: '[AUTH_HASH_MISSING_OR_INVALID] В initData отсутствует корректный hash.' };
+    return { ok: false, error: 'Нет корректной подписи Telegram.' };
   }
 
   params.delete('hash');
-  // При проверке токеном бота исключается только hash.
-  // Поле signature, если оно присутствует, должно остаться в data-check-string.
+  // Telegram's bot validation data-check-string excludes hash and signature.
+  params.delete('signature');
   const dataCheckString = [...params.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => `${key}=${value}`)
     .join('\n');
   const secretKey = crypto.createHmac('sha256', 'WebAppData').update(BOT_TOKEN).digest();
@@ -53,32 +93,23 @@ function verifyTelegramInitData(initData) {
   const actual = Buffer.from(hash, 'hex');
   const expected = Buffer.from(expectedHash, 'hex');
   if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) {
-    const diagnostic = {
-      code: 'AUTH_HASH_MISMATCH',
-      fields: [...params.keys()].sort(),
-      hasUser: params.has('user'),
-      hasAuthDate: params.has('auth_date'),
-      hasSignature: params.has('signature'),
-      botTokenConfigured: Boolean(BOT_TOKEN),
-    };
-    console.warn('[AUTH] Telegram initData hash mismatch', JSON.stringify(diagnostic));
-    return { ok: false, code: diagnostic.code, error: '[AUTH_HASH_MISMATCH] Подпись initData не совпала. Проверь BOT_TOKEN (должен быть от того же бота) и передачу Telegram.WebApp.initData. Подробности без секретов — в Logs Render.' };
+    return { ok: false, error: 'Подпись Telegram недействительна. Запусти игру из меню бота.' };
   }
 
   const authDate = Number(params.get('auth_date') || 0);
   const nowSeconds = Math.floor(Date.now() / 1000);
   if (!Number.isFinite(authDate) || authDate <= 0 || authDate > nowSeconds + 60 || nowSeconds - authDate > 86400) {
-    return { ok: false, code: 'AUTH_DATE_INVALID_OR_EXPIRED', error: '[AUTH_DATE_INVALID_OR_EXPIRED] Данные Telegram устарели или время некорректно. Закрой и снова открой игру.' };
+    return { ok: false, error: 'Данные Telegram устарели. Закрой и снова открой игру.' };
   }
 
   let user;
   try {
     user = JSON.parse(params.get('user') || 'null');
   } catch {
-    return { ok: false, code: 'AUTH_USER_JSON_INVALID', error: '[AUTH_USER_JSON_INVALID] Не удалось прочитать профиль пользователя из initData.' };
+    return { ok: false, error: 'Профиль Telegram повреждён.' };
   }
   if (!user || user.id === undefined || user.id === null) {
-    return { ok: false, code: 'AUTH_USER_MISSING', error: '[AUTH_USER_MISSING] В initData нет профиля пользователя.' };
+    return { ok: false, error: 'В данных Telegram не найден профиль игрока.' };
   }
   return { ok: true, user };
 }
@@ -334,7 +365,7 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (url.pathname === '/health') {
     res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
-    res.end(JSON.stringify({ ok: true, rooms: rooms.size, players: [...rooms.values()].reduce((total, room) => total + room.players.length, 0), authConfigured: Boolean(BOT_TOKEN) }));
+    res.end(JSON.stringify({ ok: true, rooms: rooms.size, players: [...rooms.values()].reduce((total, room) => total + room.players.length, 0), authConfigured: Boolean(BOT_TOKEN), kvConfigured: Boolean(KV_WORKER_URL && KV_SYNC_SECRET) }));
     return;
   }
   res.writeHead(200, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' });
@@ -350,12 +381,15 @@ wss.on('connection', (ws, req) => {
 
   ws.player = null;
   ws.room = null;
+  ws.isAdmin = false;
+  uiClients.add(ws);
+  sendUiConfig(ws);
   ws.authed = false;
   ws.lastMessageAt = 0;
   ws.messageCount = 0;
   ws.rateWindowAt = Date.now();
 
-  ws.on('message', (raw) => {
+  ws.on('message', async (raw) => {
     const now = Date.now();
     if (now - ws.rateWindowAt >= 1000) {
       ws.rateWindowAt = now;
@@ -371,6 +405,31 @@ wss.on('connection', (ws, req) => {
     try { message = JSON.parse(raw.toString()); } catch { return; }
     if (!message || typeof message.type !== 'string') return;
 
+    if (message.type === 'adminCommand') {
+      const command = String(message.command || '').trim();
+      if (command === `/adm ${ADMIN_PASSWORD}`) {
+        ws.isAdmin = true;
+        send(ws, { type: 'adminGranted', config: globalUiConfig });
+      } else if (command.startsWith('/adm')) {
+        send(ws, { type: 'adminDenied', message: 'Неверная команда или пароль.' });
+      }
+      return;
+    }
+
+    if (message.type === 'adminUpdate') {
+      if (!ws.isAdmin) { send(ws, { type: 'adminDenied', message: 'Сначала войди в админку командой /adm.' }); return; }
+      const nextConfig = cleanUiConfig(message.config);
+      try {
+        await kvRequest('PUT', { config: nextConfig });
+        globalUiConfig = nextConfig;
+        broadcastUiConfig();
+        send(ws, { type: 'adminSaved', persistent: true });
+      } catch (error) {
+        send(ws, { type: 'adminSaveError', message: `Не удалось сохранить в Cloudflare KV: ${error.message}` });
+      }
+      return;
+    }
+
     if (message.type === 'join') {
       if (ws.authed) {
         joinQueue(ws);
@@ -378,8 +437,7 @@ wss.on('connection', (ws, req) => {
       }
       const auth = verifyTelegramInitData(message.initData || '');
       if (!auth.ok) {
-        console.warn(`[AUTH] ${auth.code || 'AUTH_FAILED'}: ${auth.error}`);
-        send(ws, { type: 'error', code: auth.code || 'AUTH_FAILED', message: auth.error });
+        send(ws, { type: 'error', message: auth.error });
         ws.close(1008, 'Telegram authentication failed');
         return;
       }
@@ -417,8 +475,8 @@ wss.on('connection', (ws, req) => {
     }
   });
 
-  ws.on('close', () => removePlayer(ws));
-  ws.on('error', () => removePlayer(ws));
+  ws.on('close', () => { uiClients.delete(ws); removePlayer(ws); });
+  ws.on('error', () => { uiClients.delete(ws); removePlayer(ws); });
 });
 
 const heartbeat = setInterval(() => {
